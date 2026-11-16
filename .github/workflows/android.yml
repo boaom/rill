@@ -89,9 +89,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rill-debug-apk
-          path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            /tmp/apk-evidence.txt
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload APK evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rill-apk-evidence
+          path: /tmp/apk-evidence.txt
           if-no-files-found: error
           retention-days: 14
 
@@ -109,23 +115,41 @@ jobs:
           name: rill-debug-apk
           path: release
 
+      - name: Download APK evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: rill-apk-evidence
+          path: evidence
+
+      - name: Compose release notes
+        run: |
+          cat > release-body.md <<'EOF'
+          ## 溪流 Android APK（debug 构建，run ${{ github.run_number }}）
+
+          ⚠️ 这是**未签名发布版（Android debug 签名）**，不是生产/商店签名。安装需在 Android 设置中允许“未知来源”。
+
+          - **在线登录功能本轮尚未接入**：当前 APK 是离线版本，使用随包 mock 数据；直连微博将在后续版本接入。
+          - **debug keystore 不固定**：CI 每次构建可能生成不同的 debug 签名，覆盖安装旧版本时可能需要先卸载。若需要升级保留数据，后续应改为固定签名。
+          - 构建提交：`${{ github.sha }}`
+          - Web 资源：`dist/` 由 `pnpm build` 生成后经 `npx cap sync android` 打进 APK。
+          - 本 Release 为 CI 自动创建；APK 与本次 run 的 artifact 相同。
+          EOF
+          test -f evidence/apk-evidence.txt
+          {
+            echo
+            echo '## CI APK evidence'
+            echo '```text'
+            cat evidence/apk-evidence.txt
+            echo '```'
+          } >> release-body.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-run-${{ github.run_number }}
           name: 溪流 APK v0.1.0 (debug, run ${{ github.run_number }})
           prerelease: true
-          body: |
-            ## 溪流 Android APK（debug 构建，run `${{ github.run_number }}`）
-
-            ⚠️ 这是**未签名发布版（Android debug 签名）**，不是生产/商店签名。安装需在 Android 设置中允许“未知来源”。
-
-            - **在线登录功能本轮尚未接入**：当前 APK 是离线版本，使用随包 mock 数据；直连微博将在后续版本接入。
-            - **debug keystore 不固定**：CI 每次构建可能生成不同的 debug 签名，覆盖安装旧版本时可能需要先卸载。若需要升级保留数据，后续应改为固定签名。
-            - 构建提交：`${{ github.sha }}`
-            - Web 资源：`dist/` 由 `pnpm build` 生成后经 `npx cap sync android` 打进 APK。
-            - 本 Release 为 CI 自动创建；APK 与本次 run 的 artifact 相同。
-          files: |
-            release/app-debug.apk
-            release/apk-evidence.txt
+          body_path: release-body.md
+          files: release/app-debug.apk
+          fail_on_unmatched_files: true
           token: ${{ secrets.GITHUB_TOKEN }}
