@@ -3,7 +3,7 @@ import { AccountChip } from '../components/AccountChip';
 import { EmptyState } from '../components/EmptyState';
 import { PostCard } from '../components/PostCard';
 import { getAuthor } from '../data/mock';
-import { ApiError, RISK_CONTROL_COPY, searchPosts, setLike, writeErrorMessage, type SessionInfo } from '../data/api';
+import { ApiError, RISK_CONTROL_COPY, searchPosts, setLike, writeErrorMessage, type ApiMode, type SessionInfo } from '../data/api';
 import type { Author, Post } from '../types';
 
 function errorState(error: ApiError): { title: string; text: string; action?: string } {
@@ -12,11 +12,12 @@ function errorState(error: ApiError): { title: string; text: string; action?: st
   }
   if (error.code === 'RATE_LIMITED') return { title: '操作太快了', text: '微博限流了，等一会儿再试。', action: '重试' };
   if (error.code === 'RISK_CONTROL') return { ...RISK_CONTROL_COPY };
-  return { title: '搜索没有加载出来', text: '检查本机 server 与网络后再试。', action: '重试' };
+  return { title: '搜索没有加载出来', text: '检查网络后再试。', action: '重试' };
 }
 
 export function SearchPage({
   online,
+  mode = 'backend',
   session,
   onLogin,
   onLogout,
@@ -24,6 +25,7 @@ export function SearchPage({
   onToast,
 }: {
   online: boolean;
+  mode?: ApiMode;
   session: SessionInfo | null;
   onLogin: () => void;
   onLogout: () => void;
@@ -45,7 +47,7 @@ export function SearchPage({
     setLoading(true);
     setError(null);
     try {
-      const page = await searchPosts(query, 'statuses', null, 'online');
+      const page = await searchPosts(query, 'statuses', null, mode);
       setItems(page.items.filter((item): item is Post => Boolean(item && typeof (item as Post).text === 'string')));
       setUsers(page.users);
       setSearched(true);
@@ -71,7 +73,7 @@ export function SearchPage({
     });
     setLikeBusy((prev) => new Set(prev).add(post.id));
     try {
-      await setLike(post.id, nextOn);
+      await setLike(post.id, nextOn, mode);
       onToast(nextOn ? '已赞' : '已取消赞');
     } catch (reason) {
       setLiked((prev) => {
@@ -137,7 +139,7 @@ export function SearchPage({
               {loading ? '搜索中' : '搜索'}
             </button>
           </form>
-          <p className="search__hint">只读搜索；内容来自 m.weibo.cn，低频请求已做 30–60 秒缓存。</p>
+          <p className="search__hint">只读搜索；内容来自微博，低频请求已做 30–60 秒缓存。</p>
 
           {state ? (
             <EmptyState

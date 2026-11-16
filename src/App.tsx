@@ -305,15 +305,17 @@ export default function App() {
     else goReplace('#/timeline');
   }, [goReplace]);
 
-  const online = net.mode === 'online';
+  const online = net.mode !== 'offline';
   const openLogin = useCallback(() => go('#/login'), [go]);
   const handleLogin = useCallback((session: SessionInfo) => {
     setNet((prev) => ({
       ...prev,
       session,
-      mode: prev.config?.provider === 'weibo' && (session.authenticated || session.hasSession)
-        ? 'online'
-        : 'offline',
+      mode: session.provider === 'device' || session.mode === 'device'
+        ? 'device'
+        : prev.config?.provider === 'weibo' && (session.authenticated || session.hasSession)
+          ? 'backend'
+          : 'offline',
     }));
   }, []);
   const handleLogout = useCallback(async () => {
@@ -422,7 +424,7 @@ export default function App() {
       const key = publishKeyRef.current || newIdempotencyKey();
       publishKeyRef.current = key;
       try {
-        const result = await publishStatus(text, composeMedia, key);
+        const result = await publishStatus(text, composeMedia, key, net.mode);
         setComposeText('');
         setComposeMedia([]);
         setDraftSaved(false);
@@ -450,7 +452,7 @@ export default function App() {
     setVisibleLimit((limit) => limit + 1);
     setFreshPostId(postId);
     showToast('已发布', 2200);
-  }, [composeMedia, composeText, goReplace, net.session, online, showToast, state]);
+  }, [composeMedia, composeText, goReplace, net.mode, net.session, online, showToast, state]);
 
   const toggleTheme = useCallback(() => {
     dispatch({ type: 'setTheme', theme: state.theme === 'dark' ? 'light' : 'dark' });
@@ -502,6 +504,7 @@ export default function App() {
       case 'timeline':
         return online ? (
           <OnlineTimelinePage
+            mode={net.mode}
             feedTab={feedTab}
             onFeedTab={changeFeed}
             session={net.session}
@@ -535,6 +538,7 @@ export default function App() {
       case 'status':
         return online ? (
           <OnlineDetailPage
+            mode={net.mode}
             postId={location.id ?? ''}
             onLogin={openLogin}
             onBack={goBack}
@@ -577,6 +581,7 @@ export default function App() {
       case 'me':
         return online ? (
           <OnlineProfilePage
+            mode={net.mode}
             tab={profileTab}
             onTab={setProfileTab}
             session={net.session}
@@ -611,6 +616,7 @@ export default function App() {
         return (
           <SearchPage
             online={online}
+            mode={net.mode}
             session={net.session}
             onLogin={openLogin}
             onLogout={() => void handleLogout()}

@@ -41,7 +41,7 @@ export function LoginPage({
         else if (reason.code === 'AUTH_EXPIRED' || reason.code === 'AUTH_REQUIRED') setError('会话未能建立，请重新粘贴完整 Cookie。');
         else setError(`连接失败：${reason.message}`);
       } else {
-        setError('连接本地服务失败，请确认 server 已启动。');
+        setError('连接失败：请检查网络、Cookie 或本地 server。');
       }
     } finally {
       setBusy(false);
@@ -57,7 +57,7 @@ export function LoginPage({
           </button>
           <h1 className="rill-header__title">登录</h1>
           <span className="rill-header__spacer" />
-          <span className="header__hint">{online ? '在线只读' : '本机'}</span>
+          <span className="header__hint">{online ? '在线' : '本机'}</span>
         </div>
       </header>
 
@@ -65,11 +65,10 @@ export function LoginPage({
         <p className="auth__eyebrow">COOKIE LOGIN</p>
         <h2 className="auth__title">连接你的微博</h2>
         <p className="auth__lead">
-          在浏览器打开 <b>m.weibo.cn</b> 并登录，复制请求头里的 Cookie，粘贴到下面。
+          粘贴微博 Cookie 到下面。
         </p>
         <div className="auth__note" data-testid="login-privacy-note">
-          Cookie 只保存在本实例的加密会话里（HttpOnly），不写入 localStorage，不落日志；
-          服务日志只记录 cookie 名称与长度。任何拿到本机服务的人仍可读取会话，请只在自己的机器上使用。
+          Cookie 只保存在这台设备，不写日志、不上报；等同账号凭证，别外传。
         </div>
 
         <label className="auth__label" htmlFor="cookie-input">
@@ -103,10 +102,7 @@ export function LoginPage({
 
         {done?.authenticated ? (
           <div className="auth__success" data-testid="login-success">
-            <p className="auth__success-title">Cookie 已保存，微博校验通过</p>
-            <p className="auth__success-text">
-              首次联调请按 <a href="docs/weibo-verify-15min.md">docs/weibo-verify-15min.md</a> 走一遍：先验身份，再验读，最后验写。
-            </p>
+            <p className="auth__success-title">已保存在这台设备，已验证</p>
             <button type="button" className="btn btn--primary auth__submit" data-testid="login-enter" onClick={onBack}>
               进入时间线
             </button>
@@ -154,7 +150,7 @@ export function LoginPage({
           </button>
         )}
         <p className="auth__foot">
-          不提供账号密码或短信登录：新设备登录需要二次验证，本应用只做本机只读辅助。
+          不支持账密登录；写端点可能变化，失败不重试
         </p>
       </div>
     </section>

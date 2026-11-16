@@ -5,7 +5,7 @@ import { PostCard } from '../components/PostCard';
 import { Segment } from '../components/Segment';
 import { WriteSheet } from '../components/WriteSheet';
 import { getAuthor } from '../data/mock';
-import { ApiError, RISK_CONTROL_COPY, commentStatus, getTimeline, repostStatus, setLike, writeErrorMessage, type Page, type SessionInfo } from '../data/api';
+import { ApiError, RISK_CONTROL_COPY, commentStatus, getTimeline, repostStatus, setLike, writeErrorMessage, type ApiMode, type Page, type SessionInfo } from '../data/api';
 import type { Author, FeedTab, Post } from '../types';
 
 function readableError(error: ApiError): { title: string; text: string; action: string; auth: boolean } {
@@ -14,10 +14,11 @@ function readableError(error: ApiError): { title: string; text: string; action: 
   }
   if (error.code === 'RATE_LIMITED') return { title: '操作太快了', text: '微博限流了，等一分钟再试。', action: '重试', auth: false };
   if (error.code === 'RISK_CONTROL') return { ...RISK_CONTROL_COPY, auth: false };
-  return { title: '内容没有加载出来', text: '检查本机 server、网络与 Cookie 后再试。', action: '重试', auth: false };
+  return { title: '内容没有加载出来', text: '检查网络与 Cookie 后再试。', action: '重试', auth: false };
 }
 
 export function OnlineTimelinePage({
+  mode = 'backend',
   feedTab,
   onFeedTab,
   session,
@@ -28,6 +29,7 @@ export function OnlineTimelinePage({
   freshPost,
   freshAuthor,
 }: {
+  mode?: ApiMode;
   feedTab: FeedTab;
   onFeedTab: (tab: FeedTab) => void;
   session: SessionInfo | null;
@@ -56,7 +58,7 @@ export function OnlineTimelinePage({
     if (reset) setLoading(true);
     setError(null);
     try {
-      const next = await getTimeline(tab, reset ? null : cursor, 'online');
+      const next = await getTimeline(tab, reset ? null : cursor, mode);
       setPage((prev) => {
         if (reset || !prev) return next;
         const seen = new Set(prev.items.map((item) => item.id));
@@ -68,7 +70,7 @@ export function OnlineTimelinePage({
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     void load(feedTab, true);
@@ -99,7 +101,7 @@ export function OnlineTimelinePage({
     });
     setLikeBusy((prev) => new Set(prev).add(post.id));
     try {
-      const result = await setLike(post.id, nextOn);
+      const result = await setLike(post.id, nextOn, mode);
       if (Number.isFinite(result.count) && result.count > 0) {
         setOverrides((prev) => ({ ...prev, [post.id]: { ...prev[post.id], likes: result.count } }));
       }
@@ -140,14 +142,14 @@ export function OnlineTimelinePage({
     setWriteError('');
     try {
       if (writeKind === 'repost') {
-        const result = await repostStatus(writePost.id, writeText.trim());
+        const result = await repostStatus(writePost.id, writeText.trim(), mode);
         setOverrides((prev) => ({
           ...prev,
           [writePost.id]: { ...prev[writePost.id], reposts: (prev[writePost.id]?.reposts ?? writePost.counts.reposts) + 1 },
         }));
         onToast(result.notice || (result.pending ? '已转发（待同步）' : '已转发'));
       } else {
-        const result = await commentStatus(writePost.id, writeText.trim());
+        const result = await commentStatus(writePost.id, writeText.trim(), null, mode);
         setOverrides((prev) => ({
           ...prev,
           [writePost.id]: { ...prev[writePost.id], replies: (prev[writePost.id]?.replies ?? writePost.counts.replies) + 1 },

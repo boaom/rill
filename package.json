@@ -13,6 +13,8 @@
     "preview": "vite preview --port 4179 --strictPort",
     "check:ui": "node scripts/check-hit.mjs",
     "test:write": "node --test server/test/write-ops.mjs",
+    "test:device": "node --test test/device-provider.test.mjs",
+    "check:device": "node scripts/check-device-direct.mjs",
     "check:online": "node scripts/check-online-writes.mjs",
     "server": "node server/index.mjs",
     "dev:full": "node server/dev-full.mjs",

@@ -1,6 +1,6 @@
-// src/data/api.ts —— 统一数据源：offline 走随包 mock.json，online 走本地 server 的 /api。
-// 离线路径不产生网络请求；online 路径只在 server 检测到 RILL_PROVIDER=weibo 时启用。
-// 本文件不接触 cookie 值：登录值只在 LoginPage 的 POST body 里短暂存在。
+// src/data/api.ts —— 统一数据源：offline（随包 mock）/ backend（本地 server）/ device（设备直连）。
+// browser 只在 server 检测到 RILL_PROVIDER=weibo 时进入 backend；原生 shell 进入 device。
+// device 的 cookie 只由 src/device/session.ts 读写；本文件不打印、不上报任何凭证。
 import {
   AUTHORS,
   AUTHOR_BY_ID,
@@ -12,7 +12,7 @@ import {
 } from './mock';
 import type { Author, FeedTab, MediaRef, Post, Reply } from '../types';
 
-export type ApiMode = 'offline' | 'online';
+export type ApiMode = 'offline' | 'backend' | 'device';
 
 export interface SessionUser {
   uid: string | null;
@@ -153,7 +153,22 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
 
 // ---------------------------------------------------------------- bootstrap / auth
 
+/** 原生判定只用 Capacitor 注入的全局对象，不 import @capacitor/core。 */
+export function isDeviceRuntime(): boolean {
+  return Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.());
+}
+
+async function deviceModule() {
+  return import('../device/client');
+}
+
 export async function getBootstrap(): Promise<BootstrapInfo> {
+  // 原生壳优先：设备直连不依赖、也不探测本地 server。
+  if (isDeviceRuntime()) {
+    const session = await (await deviceModule()).readSession();
+    return { mode: 'device', config: null, session };
+  }
+
   let config: ConfigInfo | null = null;
   let session: SessionInfo = {
     authenticated: false,
@@ -173,15 +188,15 @@ export async function getBootstrap(): Promise<BootstrapInfo> {
     session = {
       authenticated: false,
       provider: config.provider || 'mock',
-      mode: config.provider === 'weibo' ? 'online' : 'offline',
+      mode: config.provider === 'weibo' ? 'backend' : 'offline',
     };
   }
 
-  // 默认 mock server → offline；weibo 必须“微博校验通过”才进入在线。
+  // 默认 mock server → offline；weibo 必须“微博校验通过”才进入 backend。
   // 仅有加密会话行（hasSession）但上游 login:false 时不能算在线：那会让
   // 用户以为登录成功、随后到处 401（M2）。没有 cookie/校验失败保持离线 mock。
   const mode: ApiMode = config.provider === 'weibo' && session.authenticated === true
-    ? 'online'
+    ? 'backend'
     : 'offline';
   return { mode, config, session };
 }
@@ -191,6 +206,9 @@ export async function getSession(): Promise<SessionInfo> {
 }
 
 export async function loginWithCookies(cookies: Array<{ name: string; value: string }>): Promise<SessionInfo> {
+  if (isDeviceRuntime()) {
+    return (await deviceModule()).loginDevice(cookies);
+  }
   await requestJson<{ ok: boolean }>('/api/session/cookie', {
     method: 'POST',
     body: JSON.stringify({ cookies }),
@@ -199,6 +217,10 @@ export async function loginWithCookies(cookies: Array<{ name: string; value: str
 }
 
 export async function logout(): Promise<void> {
+  if (isDeviceRuntime()) {
+    await (await deviceModule()).logoutDevice();
+    return;
+  }
   await requestJson<null>('/api/session', {
     method: 'DELETE',
     headers: csrfToken ? { 'X-Rill-CSRF': csrfToken } : {},
@@ -243,22 +265,26 @@ async function writeJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 /** 点赞/取消赞：服务端返回真实计数；失败时由调用方回滚乐观状态。 */
-export async function setLike(id: string, on: boolean): Promise<LikeResult> {
+export async function setLike(id: string, on: boolean, mode: ApiMode = 'backend'): Promise<LikeResult> {
+  if (mode === 'device') return (await deviceModule()).setLike(id, on);
   return writeJson<LikeResult>(`/api/status/${encodeURIComponent(id)}/like`, { on });
 }
 
 /** 转发；写失败绝不自动重试，调用方保留草稿。 */
-export async function repostStatus(id: string, text: string): Promise<WritePostResult> {
+export async function repostStatus(id: string, text: string, mode: ApiMode = 'backend'): Promise<WritePostResult> {
+  if (mode === 'device') return (await deviceModule()).repost(id, text);
   return writeJson<WritePostResult>(`/api/status/${encodeURIComponent(id)}/repost`, { text });
 }
 
 /** 评论；replyTo 是父评论 id，只允许一层楼中楼。 */
-export async function commentStatus(id: string, text: string, replyTo: string | null = null): Promise<WriteReplyResult> {
+export async function commentStatus(id: string, text: string, replyTo: string | null = null, mode: ApiMode = 'backend'): Promise<WriteReplyResult> {
+  if (mode === 'device') return (await deviceModule()).comment(id, text, replyTo);
   return writeJson<WriteReplyResult>(`/api/status/${encodeURIComponent(id)}/comment`, { text, replyTo });
 }
 
 /** 发博；pics 为现有 MediaRef 占位时服务端会降级纯文本，并在 notice 里说明。 */
-export async function publishStatus(text: string, pics: MediaRef[] = [], key?: string): Promise<WritePostResult> {
+export async function publishStatus(text: string, pics: MediaRef[] = [], key?: string, mode: ApiMode = 'backend'): Promise<WritePostResult> {
+  if (mode === 'device') return (await deviceModule()).publish(text, pics, key);
   return requestJson<WritePostResult>('/api/status/publish', {
     method: 'POST',
     headers: {
@@ -469,6 +495,7 @@ function onlinePage<T>(payload: unknown, normalizeItem?: (item: T) => T): Page<T
 
 export async function getTimeline(tab: FeedTab, cursor: string | null = null, mode: ApiMode = 'offline'): Promise<Page<Post>> {
   if (mode === 'offline') return localTimeline(tab, cursor);
+  if (mode === 'device') return (await deviceModule()).getTimeline(tab, cursor);
   const kind = tab === 'following' ? 'friends' : 'recommend';
   const params = new URLSearchParams({ tab: kind });
   if (cursor) params.set('cursor', cursor);
@@ -477,6 +504,7 @@ export async function getTimeline(tab: FeedTab, cursor: string | null = null, mo
 
 export async function getStatus(id: string, mode: ApiMode = 'offline'): Promise<StatusPayload> {
   if (mode === 'offline') return localStatus(id);
+  if (mode === 'device') return (await deviceModule()).getStatus(id);
   const payload = await requestJson<{ post: Post; users: Author[] }>(`/api/status/${encodeURIComponent(id)}`);
   return {
     post: normalizeOnlinePost(payload.post),
@@ -486,6 +514,7 @@ export async function getStatus(id: string, mode: ApiMode = 'offline'): Promise<
 
 export async function getComments(id: string, cursor: string | null = null, mode: ApiMode = 'offline'): Promise<Page<Reply>> {
   if (mode === 'offline') return localComments(id, cursor);
+  if (mode === 'device') return (await deviceModule()).getComments(id, cursor);
   const params = new URLSearchParams();
   if (cursor) params.set('cursor', cursor);
   return onlinePage<Reply>(await requestJson(`/api/comments/${encodeURIComponent(id)}?${params}`));
@@ -493,12 +522,14 @@ export async function getComments(id: string, cursor: string | null = null, mode
 
 export async function getUser(uid: string, mode: ApiMode = 'offline'): Promise<Author> {
   if (mode === 'offline') return localUser(uid);
+  if (mode === 'device') return (await deviceModule()).getUser(uid);
   const payload = await requestJson<{ user: Author }>(`/api/user/${encodeURIComponent(uid)}`);
   return normalizeOnlineAuthor(payload.user);
 }
 
 export async function getUserPosts(uid: string, cursor: string | null = null, mode: ApiMode = 'offline'): Promise<Page<Post>> {
   if (mode === 'offline') return localUserPosts(uid, cursor);
+  if (mode === 'device') return (await deviceModule()).getUserPosts(uid, cursor);
   const params = new URLSearchParams();
   if (cursor) params.set('cursor', cursor);
   return onlinePage<Post>(await requestJson(`/api/user/${encodeURIComponent(uid)}/posts?${params}`), normalizeOnlinePost);
@@ -506,6 +537,7 @@ export async function getUserPosts(uid: string, cursor: string | null = null, mo
 
 export async function searchPosts(query: string, kind: 'statuses' | 'users' | 'topics' = 'statuses', cursor: string | null = null, mode: ApiMode = 'offline'): Promise<Page<Post | Author>> {
   if (mode === 'offline') return localSearch(query, kind, cursor);
+  if (mode === 'device') return (await deviceModule()).search(query, kind, cursor);
   const params = new URLSearchParams({ q: query, kind });
   if (cursor) params.set('cursor', cursor);
   return onlinePage<Post | Author>(await requestJson(`/api/search?${params}`));

@@ -1,0 +1,169 @@
+{
+  "source": "https://raw.githubusercontent.com/upupming/weiboAPI/master/old/response.js (2019-06 sample referenced by docs/weibo-api.md §3.1/§3.3)",
+  "userInfo": {
+    "ok": 1,
+    "data": {
+      "userInfo": {
+        "id": 1669879400,
+        "screen_name": "Dear-迪丽热巴",
+        "description": "一只喜欢默默表演的小透明。工作联系helloworkwork@126.com🍒",
+        "followers_count": 63357736,
+        "follow_count": 240,
+        "statuses_count": 1008,
+        "verified": true,
+        "verified_type": 0
+      }
+    }
+  },
+  "statusShow": {
+    "ok": 1,
+    "data": {
+      "id": "4383183661430868",
+      "idstr": "4383183661430868",
+      "mid": "4383183661430868",
+      "bid": "HyTZc60ew",
+      "created_at": "Fri Jun 14 20:39:20 +0800 2019",
+      "text": "搬完这块砖，就可以吃好吃的了<span class=\"url-icon\"><img alt=[偷笑] src=\"//h5.sinaimg.cn/m/emoticon/d_touxiao.png\" /></span> ",
+      "source": "<a href=\"https://m.weibo.cn/client/version\" rel=\"nofollow\">iPhone 15 Pro</a>",
+      "reposts_count": 240492,
+      "comments_count": 95535,
+      "attitudes_count": 348872,
+      "isLongText": false,
+      "user": {
+        "id": 1669879400,
+        "screen_name": "Dear-迪丽热巴",
+        "description": "一只喜欢默默表演的小透明。",
+        "followers_count": 63357736,
+        "follow_count": 240,
+        "statuses_count": 1008,
+        "verified": true,
+        "verified_type": 0
+      },
+      "pics": [
+        {
+          "pid": "63885668gy1g40ypljwzvj20o70v379u",
+          "geo": {
+            "width": 360,
+            "height": 462
+          }
+        }
+      ]
+    }
+  },
+  "timeline": {
+    "ok": 1,
+    "data": {
+      "cards": [
+        {
+          "card_type": 9,
+          "mblog": {
+            "id": "4383183661430868",
+            "idstr": "4383183661430868",
+            "mid": "4383183661430868",
+            "created_at": "Fri Jun 14 20:39:20 +0800 2019",
+            "text": "搬完这块砖，就可以吃好吃的了",
+            "raw_text": "搬完这块砖，就可以吃好吃的了 #日常#",
+            "source": "<a href=\"x\">iPhone客户端</a>",
+            "reposts_count": 240492,
+            "comments_count": 95535,
+            "attitudes_count": 348872,
+            "user": {
+              "id": 1669879400,
+              "screen_name": "Dear-迪丽热巴",
+              "description": "演员",
+              "followers_count": 63357736,
+              "follow_count": 240,
+              "statuses_count": 1008,
+              "verified": true,
+              "verified_type": 0
+            },
+            "pics": [
+              {
+                "pid": "63885668gy1g40ypljwzvj20o70v379u",
+                "geo": {
+                  "width": 360,
+                  "height": 462
+                }
+              }
+            ],
+            "retweeted_status": {
+              "idstr": "4383000000000000",
+              "user": {
+                "id": 1234567890,
+                "screen_name": "被转发的人",
+                "verified": false,
+                "verified_type": -1
+              }
+            }
+          }
+        }
+      ],
+      "cardlistInfo": {
+        "page": 1,
+        "total": 1012
+      }
+    }
+  },
+  "comments": {
+    "ok": 1,
+    "data": {
+      "data": [
+        {
+          "id": "4383183984547669",
+          "rootid": "4383183984547669",
+          "created_at": "Fri Jun 14 20:39:20 +0800 2019",
+          "text": "宝宝陪你一起搬陪你一起吃<span class=\"url-icon\"><img alt=[羞嗒嗒] /></span>",
+          "user": {
+            "id": 1787569845,
+            "screen_name": "护舒宝",
+            "verified": true,
+            "verified_type": 2
+          },
+          "comments": [
+            {
+              "id": "4383183984547700",
+              "rootid": "4383183984547669",
+              "created_at": "Fri Jun 14 20:40:20 +0800 2019",
+              "text": "楼中楼",
+              "user": {
+                "id": 6020969248,
+                "screen_name": "迪热热的毛裤诶",
+                "verified": false,
+                "verified_type": -1
+              }
+            }
+          ]
+        }
+      ],
+      "total_number": 125020,
+      "max_id": 0,
+      "max_id_type": 0
+    }
+  },
+  "longText": {
+    "ok": 1,
+    "data": {
+      "longTextContent": "第一段<br />第二段 &amp; 完整内容"
+    }
+  },
+  "userSearch": {
+    "ok": 1,
+    "data": {
+      "cards": [
+        {
+          "card_type": 10,
+          "user": {
+            "id": 1669879400,
+            "screen_name": "Dear-迪丽热巴",
+            "verified": true,
+            "verified_type": 0,
+            "followers_count": 63357736,
+            "follow_count": 240,
+            "statuses_count": 1008,
+            "description": "演员"
+          }
+        }
+      ]
+    }
+  }
+}

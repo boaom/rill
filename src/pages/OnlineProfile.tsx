@@ -5,7 +5,7 @@ import { PostCard } from '../components/PostCard';
 import { Avatar } from '../components/Avatar';
 import { Segment } from '../components/Segment';
 import { getAuthor } from '../data/mock';
-import { ApiError, getUser, getUserPosts, setLike, writeErrorMessage, type Page, type SessionInfo } from '../data/api';
+import { ApiError, getUser, getUserPosts, setLike, writeErrorMessage, type ApiMode, type Page, type SessionInfo } from '../data/api';
 import type { Author, Post, ProfileTab } from '../types';
 
 function accountAuthor(session: SessionInfo | null): Author {
@@ -26,6 +26,7 @@ function accountAuthor(session: SessionInfo | null): Author {
 }
 
 export function OnlineProfilePage({
+  mode = 'backend',
   tab,
   onTab,
   session,
@@ -34,6 +35,7 @@ export function OnlineProfilePage({
   onOpen,
   onToast,
 }: {
+  mode?: ApiMode;
   tab: ProfileTab;
   onTab: (tab: ProfileTab) => void;
   session: SessionInfo | null;
@@ -62,7 +64,7 @@ export function OnlineProfilePage({
         return;
       }
       try {
-        const [nextUser, nextPage] = await Promise.all([getUser(uid, 'online'), getUserPosts(uid, null, 'online')]);
+        const [nextUser, nextPage] = await Promise.all([getUser(uid, mode), getUserPosts(uid, null, mode)]);
         if (!alive) return;
         setUser(nextUser);
         setPage(nextPage);
@@ -75,7 +77,7 @@ export function OnlineProfilePage({
     return () => {
       alive = false;
     };
-  }, [uid, session]);
+  }, [uid, session, mode]);
 
   const me = user || accountAuthor(session);
   const posts = page?.items ?? [];
@@ -93,7 +95,7 @@ export function OnlineProfilePage({
     });
     setLikeBusy((prev) => new Set(prev).add(post.id));
     try {
-      await setLike(post.id, nextOn);
+      await setLike(post.id, nextOn, mode);
       onToast(nextOn ? '已赞' : '已取消赞');
     } catch (reason) {
       setLiked((prev) => {

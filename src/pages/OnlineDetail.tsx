@@ -5,7 +5,7 @@ import { Avatar } from '../components/Avatar';
 import { TopicText } from '../components/TopicText';
 import { WriteSheet } from '../components/WriteSheet';
 import { getAuthor } from '../data/mock';
-import { ApiError, RISK_CONTROL_COPY, commentStatus, getComments, getStatus, repostStatus, setLike, writeErrorMessage, type Page, type StatusPayload } from '../data/api';
+import { ApiError, RISK_CONTROL_COPY, commentStatus, getComments, getStatus, repostStatus, setLike, writeErrorMessage, type ApiMode, type Page, type StatusPayload } from '../data/api';
 import type { Author, Reply } from '../types';
 import { formatRelative, isoTime } from '../lib/time';
 
@@ -14,12 +14,14 @@ function authLike(error: ApiError): boolean {
 }
 
 export function OnlineDetailPage({
+  mode = 'backend',
   postId,
   onLogin,
   onBack,
   onTimeline,
   onToast,
 }: {
+  mode?: ApiMode;
   postId: string;
   onLogin: () => void;
   onBack: () => void;
@@ -54,11 +56,11 @@ export function OnlineDetailPage({
     setComments(null);
     (async () => {
       try {
-        const next = await getStatus(postId, 'online');
+        const next = await getStatus(postId, mode);
         if (!alive) return;
         setStatus(next);
         try {
-          const page = await getComments(postId, null, 'online');
+          const page = await getComments(postId, null, mode);
           if (alive) setComments(page);
         } catch (reason) {
           if (alive) setCommentError(reason instanceof ApiError ? reason : new ApiError('UPSTREAM', '评论加载失败', 0));
@@ -72,7 +74,7 @@ export function OnlineDetailPage({
     return () => {
       alive = false;
     };
-  }, [postId]);
+  }, [postId, mode]);
 
   const users = useMemo(() => {
     const map = new Map<string, Author>();
@@ -121,7 +123,7 @@ export function OnlineDetailPage({
     setLiked(nextOn);
     setLikeBusy(true);
     try {
-      const result = await setLike(postId, nextOn);
+      const result = await setLike(postId, nextOn, mode);
       if (Number.isFinite(result.count) && result.count > 0) setLikeCount(result.count);
       onToast(nextOn ? '已赞' : '已取消赞');
     } catch (reason) {
@@ -138,7 +140,7 @@ export function OnlineDetailPage({
     setReplyBusy(true);
     setReplyWriteError('');
     try {
-      const result = await commentStatus(postId, text);
+      const result = await commentStatus(postId, text, null, mode);
       setComments((prev) => prev
         ? { ...prev, items: [...prev.items, result.reply], hasMore: prev.hasMore }
         : { items: [result.reply], next: null, hasMore: false, users: [] });
@@ -156,7 +158,7 @@ export function OnlineDetailPage({
     setRepostBusy(true);
     setRepostError('');
     try {
-      const result = await repostStatus(postId, repostText.trim());
+      const result = await repostStatus(postId, repostText.trim(), mode);
       setRepostOpen(false);
       setRepostText('');
       onToast(result.notice || (result.pending ? '已转发（待同步）' : '已转发'));
@@ -238,7 +240,7 @@ export function OnlineDetailPage({
                 data-testid="comments-more"
                 onClick={async () => {
                   try {
-                    const next = await getComments(postId, commentPage.next, 'online');
+                    const next = await getComments(postId, commentPage.next, mode);
                     setComments({ ...next, items: [...commentPage.items, ...next.items] });
                   } catch (reason) {
                     setCommentError(reason instanceof ApiError ? reason : new ApiError('UPSTREAM', '评论加载失败', 0));
