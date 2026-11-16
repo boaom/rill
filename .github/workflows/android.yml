@@ -72,7 +72,7 @@ jobs:
           {
             echo '## Android debug APK evidence'
             echo '```text'
-            "$AAPT2" dump badging "$APK" | sed -n '1,15p'
+            "$AAPT2" dump badging "$APK" | grep -E '^(package|sdkVersion|targetSdkVersion|uses-permission|application-label:|launchable-activity)' | head -n 15
             echo '```'
             echo '### Web assets / dex present'
             echo '```text'
@@ -138,9 +138,7 @@ jobs:
           {
             echo
             echo '## CI APK evidence'
-            echo '```text'
             cat evidence/apk-evidence.txt
-            echo '```'
           } >> release-body.md
 
       - name: Create GitHub Release
