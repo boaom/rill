@@ -30,6 +30,44 @@ function shuffle(arr) {
   return out;
 }
 
+// 认证账号（新增样本）：u_05 = 首卡作者「沉舟」，u_11 = 长帖作者「摄影笔记」。
+// 只有这 2 个为 true；其余一律 false。生成器不新增随机调用（否则整份数据会漂移）。
+const VERIFIED_IDS = new Set(['u_05', 'u_11']);
+
+// 客户端尾巴（新增样本）：按作者固定一台设备（同一作者所有动态同一条尾巴，共 12 种取值）。
+// 与创作者风格一致：摄影号用 Pro/Max、读书号用 iPad、公众号用网页版/Mac、骑行号用 Android。
+const SOURCE_BY_AUTHOR = {
+  u_01: '来自 iPhone 15 Pro',
+  u_02: '来自 iPhone 14 Pro',
+  u_03: '来自 iPad Air',
+  u_04: '来自 小米 14',
+  u_05: '来自 iPhone 13 mini',
+  u_06: '来自 网页版',
+  u_07: '来自 Android 客户端',
+  u_08: '来自 iPhone SE',
+  u_09: '来自 iPad mini',
+  u_10: '来自 iPhone 15',
+  u_11: '来自 iPhone 15 Pro Max',
+  u_12: '来自 Mac',
+};
+
+// 长帖样本（新增）：p_0007 的正文，>=140 字、有分段、含 1 个 #话题#、1 个 @提及、1 个 t.cn 短链。
+// 选择 p_0007 而不是 p_0001：首卡被多处断言引用，正文保持短。
+const LONG_POST_INDEX = 6; // 0-based → p_0007
+const LONG_POST_TEXT = [
+  '这两年我慢慢发现，记录本身比记录的内容更重要。',
+  '',
+  '一开始只是随手拍，后来变成每天走同一条路都会下意识找角度：树叶的影子、公交车进站的那两秒、便利店门口的灯。',
+  '',
+  '最大的变化是不太着急了。以前总想一次拍到最好的一张，现在更愿意在同一个路口站十分钟，等光慢慢挪过来。',
+  '',
+  '拍得多了才明白，所谓手感其实就是熟悉——熟悉这条街什么时候安静，熟悉哪一段墙在下午会发亮。',
+  '',
+  '如果你也在做类似的练习，欢迎来聊 @citywalk 。往期整理放在 https://t.cn/A6xYz123',
+  '',
+  '#城市散步#',
+].join('\n');
+
 const AUTHORS = [
   { id: 'u_01', nickname: '林见', handle: 'linjian', avatarText: '见', avatarHue: 168, bio: '在城里找安静的地方。', followingCount: 128, followerCount: 964, isCurrentUser: true },
   { id: 'u_02', nickname: '周迟', handle: 'zhouchi', avatarText: '迟', avatarHue: 24, bio: '拍云的人，偶尔写字。', followingCount: 42, followerCount: 3120, isCurrentUser: false },
@@ -130,7 +168,9 @@ const MEDIA_SLOTS = [
 
 const REPOST_INDEXES = [4, 13, 19, 25]; // 这 4 条是转发（一层）
 const REPOST_TARGETS = [10, 15, 22, 28]; // 指向更早的原创
-const TOPIC_INDEXES = [2, 7, 11, 16, 21, 26]; // 6 条带话题
+// 6 条带话题（总数不变）：把 p_0008 的位让给 p_0007 长帖 —— 正文里含 #城市散步#，
+// 所以它的 topics 必须与之对应；条数与分布仍是 6 条。
+const TOPIC_INDEXES = [2, 6, 11, 16, 21, 26];
 
 export function buildMock() {
   const authorSlots = shuffle(AUTHOR_SLOTS);
@@ -170,11 +210,16 @@ export function buildMock() {
     posts.push({
       id: pid,
       authorId: authorSlots[i],
-      text: repostOf ? '看到就转了，值得留一份。' : POST_TEXTS[i],
+      text: repostOf
+        ? '看到就转了，值得留一份。'
+        : i === LONG_POST_INDEX
+          ? LONG_POST_TEXT
+          : POST_TEXTS[i],
       media,
       topics,
       repostOfId: repostOf,
       createdAt: BASE - i * 3600000 - ((i * 7919) % 1800000),
+      source: SOURCE_BY_AUTHOR[authorSlots[i]],
       counts: { reposts: (i * 13) % 24, replies: 0, likes: 5 + ((i * 37) % 180) },
     });
   }
@@ -212,6 +257,7 @@ export function buildMock() {
   const users = AUTHORS.map((a) => ({
     ...a,
     postCount: posts.filter((p) => p.authorId === a.id).length,
+    verified: VERIFIED_IDS.has(a.id),
   }));
 
   return { users, statuses: posts, comments };

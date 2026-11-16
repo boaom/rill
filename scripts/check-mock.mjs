@@ -1,6 +1,7 @@
 // scripts/check-mock.mjs —— mock 数据契约自检（pnpm build 前置）
 // 1) 仓库里的 src/data/mock.json 必须与确定性生成器的当前输出逐字节一致（防止手改 / 漂移）
 // 2) §5.2/§5.3 的结构、引用完整性、分布、不变量全部校验
+// 3) 新增样本（长文 / 认证 / 客户端尾巴）自身的不变量，防止数据退回纸面规则
 // 退出码非 0 即视为数据层坏了，不允许进入构建。
 
 import { readFileSync } from 'node:fs';
@@ -21,6 +22,11 @@ const { users, statuses, comments } = data;
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const forbid = /unique|微博|weibo|sina|app\.unique\.one/i;
 
+// 新增样本的锚点：长帖 = p_0007；首卡作者 = statuses[0].authorId
+const LONG_POST_ID = 'p_0007';
+const EXPECTED_VERIFIED = 2;
+const EXPECTED_SOURCE_COUNT = 12;
+
 // ---------- users ----------
 if (users.length !== 12) errors.push(`users 应为 12 条，实际 ${users.length}`);
 if (new Set(users.map((u) => u.id)).size !== users.length) errors.push('users.id 有重复');
@@ -33,11 +39,16 @@ for (const u of users) {
   if (u.avatarText.length < 1 || u.avatarText.length > 2) errors.push(`${u.id}: avatarText 长度越界`);
   if (!(u.avatarHue >= 0 && u.avatarHue <= 359)) errors.push(`${u.id}: avatarHue 越界`);
   if (u.bio.length > 60) errors.push(`${u.id}: bio 超过 60 字`);
+  if (typeof u.verified !== 'boolean') errors.push(`${u.id}: verified 必须是布尔，实际 ${typeof u.verified}`);
   for (const k of ['followingCount', 'followerCount', 'postCount']) {
     if (!Number.isInteger(u[k]) || u[k] < 0) errors.push(`${u.id}: ${k} 必须为非负整数`);
   }
 }
 if (new Set(users.map((u) => u.handle)).size !== users.length) errors.push('users.handle 有重复');
+const verifiedUsers = users.filter((u) => u.verified === true);
+if (verifiedUsers.length !== EXPECTED_VERIFIED) {
+  errors.push(`verified=true 应恰好 ${EXPECTED_VERIFIED} 个，实际 ${verifiedUsers.length}（${verifiedUsers.map((u) => u.id).join(',')}）`);
+}
 
 // ---------- statuses ----------
 if (statuses.length !== 30) errors.push(`statuses 应为 30 条，实际 ${statuses.length}`);
@@ -69,6 +80,51 @@ for (const p of statuses) {
   }
   if (p.media.length === 1 && p.media[0].ratio !== 'wide') errors.push(`${p.id}: 单图必须为 wide`);
 }
+
+// 新增样本①：每条动态都有非空客户端尾巴；12 种取值；同一作者固定同一台设备
+const sources = new Set();
+const sourceByAuthor = new Map();
+for (const p of statuses) {
+  if (typeof p.source !== 'string') {
+    errors.push(`${p.id}: source 必须是字符串，实际 ${typeof p.source}`);
+    continue;
+  }
+  if (p.source.trim().length === 0) errors.push(`${p.id}: source 不得为空`);
+  if (p.source !== p.source.trim()) errors.push(`${p.id}: source 首尾不得有空白`);
+  if (p.source.length > 24) errors.push(`${p.id}: source 超过 24 字`);
+  sources.add(p.source);
+  const seen = sourceByAuthor.get(p.authorId);
+  if (seen !== undefined && seen !== p.source) {
+    errors.push(`${p.authorId}: 同作者的 source 应固定（${seen} / ${p.source}）`);
+  }
+  sourceByAuthor.set(p.authorId, p.source);
+}
+if (sources.size !== EXPECTED_SOURCE_COUNT) {
+  errors.push(`source 应有 ${EXPECTED_SOURCE_COUNT} 种取值，实际 ${sources.size}`);
+}
+
+// 新增样本②：长帖 = 正文 >=140 字、有分段、含 #话题# / @提及 / t.cn 短链，topics 与之对应
+const longPost = postsById.get(LONG_POST_ID);
+if (!longPost) errors.push(`${LONG_POST_ID}: 长帖样本不存在`);
+else {
+  if (longPost.text.length < 140) errors.push(`${LONG_POST_ID}: 长帖正文应 >=140 字，实际 ${longPost.text.length}`);
+  if (longPost.text.length > 500) errors.push(`${LONG_POST_ID}: 长帖正文超过 500 字`);
+  if (!longPost.text.includes('\n')) errors.push(`${LONG_POST_ID}: 长帖应有分段（换行）`);
+  if (!/#[^#\s]{1,20}#/.test(longPost.text)) errors.push(`${LONG_POST_ID}: 长帖应含 1 个 #话题#`);
+  if (!/@[a-z0-9_]{3,16}/.test(longPost.text)) errors.push(`${LONG_POST_ID}: 长帖应含 1 个 @提及（合法 handle）`);
+  if (!/t\.cn\//.test(longPost.text)) errors.push(`${LONG_POST_ID}: 长帖应含 1 个 t.cn 短链`);
+  if (longPost.topics.length !== 1) errors.push(`${LONG_POST_ID}: 长帖应恰好 1 个话题词，实际 ${longPost.topics.length}`);
+  for (const t of longPost.topics) {
+    if (!longPost.text.includes(`#${t}#`)) errors.push(`${LONG_POST_ID}: topics 里的「${t}」必须出现在正文的 #…# 里`);
+  }
+  if (longPost.repostOfId !== null) errors.push(`${LONG_POST_ID}: 长帖必须是原创（不能是转发）`);
+}
+
+// 新增样本③：首卡作者与长帖作者都必须 verified（两个锚点各一个认证）
+const firstCardAuthor = users.find((u) => u.id === statuses[0].authorId);
+if (!firstCardAuthor || firstCardAuthor.verified !== true) errors.push('首卡作者必须 verified=true');
+if (longPost && users.find((u) => u.id === longPost.authorId)?.verified !== true) errors.push('长帖作者必须 verified=true');
+
 for (let i = 1; i < statuses.length; i += 1) {
   if (!(statuses[i - 1].createdAt > statuses[i].createdAt)) {
     errors.push(`statuses 未严格按 createdAt 倒序（位置 ${i}）`);
@@ -157,6 +213,9 @@ const summary = {
   topics: topicCount,
   nested,
   postsWithReplies,
+  verified: verifiedUsers.length,
+  sources: sources.size,
+  longPost: longPost ? longPost.text.length : 0,
 };
 if (errors.length > 0) {
   console.error(`[check:mock] FAIL (${errors.length})`);

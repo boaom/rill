@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>溪流 · 六候选缩略图（三方向门 · 第一格）</title>
+<style>
+/* ============================================================
+   外壳：只负责把六个 375 屏摆成一页
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: #E7E4DE; color: #1B1A18;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1560px; margin: 0 auto; padding: 26px 24px 6px; }
+h1 { margin: 0; font-size: 21px; letter-spacing: -.01em; }
+.sub { margin: 9px 0 0; font-size: 13px; line-height: 1.75; color: #56544E; max-width: 100ch; }
+.sub code { font-size: 12px; background: rgba(0,0,0,.055); padding: 1px 4px; border-radius: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 12px 0 0; font-size: 12px; color: #44423D; }
+.legend b { font-weight: 600; }
+
+.grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px 20px;
+  padding: 20px 24px 44px; max-width: 1560px; margin: 0 auto; align-items: start;
+}
+@media (max-width: 1199px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 599px)  { .grid { grid-template-columns: minmax(0, 1fr); padding: 16px 14px 32px; } }
+
+.cand { margin: 0; min-width: 0; }
+.cand__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 9px; padding: 0 2px 9px; }
+.cand__no { font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.cand__style { font-size: 13px; font-weight: 600; }
+.cand__temp { font-size: 12px; letter-spacing: .04em; padding: 1px 8px; border: 1px solid currentColor; border-radius: 999px; }
+.t-bold { color: #A3352A; }
+.t-calm { color: #38485C; }
+.t-mid  { color: #6B5730; }
+.cand__screen { font-size: 12px; color: #55524C; }
+.cand__note { flex-basis: 100%; font-size: 12px; line-height: 1.65; color: #6A665E; }
+
+.screen {
+  position: relative; width: 375px; max-width: 100%; height: 812px; overflow: hidden;
+  border-radius: 12px; background: #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.07), 0 12px 34px rgba(0,0,0,.13);
+}
+
+/* 照片位：程序化材质（色相来自 mock.json 的 media.hue），无位图 */
+.ph {
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(120% 120% at 26% 16%, hsl(var(--h) 42% 90%) 0%, hsl(var(--h) 32% 77%) 46%, hsl(var(--h) 26% 63%) 100%),
+    hsl(var(--h) 28% 76%);
+}
+.ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(0,0,0,.07)); }
+.ph__alt {
+  position: absolute; left: 6px; bottom: 6px; z-index: 1;
+  font-size: 12px; line-height: 1.35; padding: 1px 6px; border-radius: 3px;
+  background: rgba(10,12,14,.62); color: #fff; letter-spacing: .01em;
+}
+.av { display: grid; place-items: center; border-radius: 50%; background: hsl(var(--h) 32% 80%); color: #201D19; font-weight: 600; font-size: 12px; }
+
+/* ============================================================
+   C1 · COLLINS —— 时间是版面：四列栅格 + 巨字日期 + 数据即图像
+   ============================================================ */
+.s-c1 { background: #fff; color: #0B0B0B; }
+.s-c1__guides {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(90deg, rgba(11,11,11,.05) 1px, transparent 1px);
+  background-size: 25% 100%;
+}
+.s-c1__top { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 20px 4px; }
+.s-c1__mark { font-size: 15px; font-weight: 700; }
+.s-c1__mark span { font-size: 12px; font-weight: 400; letter-spacing: .16em; color: #6A6A6A; margin-left: 6px; }
+.s-c1__now { font-size: 12px; letter-spacing: .04em; color: #6A6A6A; }
+.s-c1__date { padding: 2px 20px 4px; border-bottom: 2px solid #0B0B0B; }
+.s-c1__dnum { font-size: 62px; line-height: .9; font-weight: 650; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+.s-c1__dsub { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; letter-spacing: .03em; color: #6A6A6A; }
+.s-c1 .p { padding: 11px 20px 0; border-bottom: 1px solid #D8D8D8; }
+.s-c1 .p__head { display: flex; align-items: baseline; gap: 8px; }
+.s-c1 .p__who { font-size: 16px; font-weight: 600; }
+.s-c1 .p__en { font-size: 12px; letter-spacing: .02em; color: #6A6A6A; }
+.s-c1 .p__time { margin-left: auto; font-size: 12px; color: #6A6A6A; font-variant-numeric: tabular-nums; }
+.s-c1 .p__body { margin: 7px 0 0; font-size: 16px; line-height: 1.75; }
+.s-c1 .p__figs { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #0B0B0B; margin-top: 10px; }
+.s-c1 .p__figs .ph { aspect-ratio: 1 / 1; }
+.s-c1 .p__figs--three { grid-template-columns: repeat(3, 1fr); }
+.s-c1 .p__counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 8px 0 12px; }
+.s-c1 .p__quote { margin-top: 8px; padding-left: 12px; border-left: 2px solid #0B0B0B; }
+.s-c1 .q__head { display: flex; align-items: baseline; gap: 7px; font-size: 12px; color: #5E5E5E; }
+.s-c1 .q__head b { font-size: 13px; font-weight: 600; color: #0B0B0B; }
+.s-c1 .q__body { margin: 4px 0 0; font-size: 16px; line-height: 1.75; }
+.s-c1 .q__figs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #0B0B0B; margin-top: 6px; }
+.s-c1 .q__figs .ph { aspect-ratio: 4 / 3; }
+.s-c1 .q__figs .more { position: absolute; right: 0; bottom: 0; font-size: 12px; padding: 1px 6px; background: rgba(10,12,14,.72); color: #fff; }
+.s-c1 .q__meta { display: flex; gap: 12px; margin-top: 5px; font-size: 12px; color: #5E5E5E; font-variant-numeric: tabular-nums; }
+.s-c1 .p__fold { display: inline-block; margin-top: 6px; font-size: 12px; color: #0B0B0B; text-decoration: underline; text-underline-offset: 2px; }
+.s-c1 .num { font-size: 25px; line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.s-c1 .lab { margin-top: 4px; font-size: 12px; letter-spacing: .02em; color: #6A6A6A; }
+.s-c1 .num--on { color: #C22F1C; }
+.s-c1__tabs {
+  position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr);
+  background: #fff; border-top: 2px solid #0B0B0B; height: 56px; align-items: center; padding: 0 20px;
+}
+.s-c1__tabs a { display: block; text-align: center; font-size: 12px; color: #6A6A6A; text-decoration: none; line-height: 44px; }
+.s-c1__tabs a.on { color: #0B0B0B; font-weight: 600; box-shadow: inset 0 -2px 0 #C22F1C; }
+
+/* ============================================================
+   C2 · 石汉瑞 —— 双语咬合：共用基线 + 细线 + 朱红只给"内容关系"
+   ============================================================ */
+.s-c2 { background: #F3EEE3; color: #221E1A; }
+.s-c2__head { display: flex; align-items: baseline; justify-content: space-between; padding: 16px 20px 14px; background: #17130F; color: #F3EEE3; }
+.s-c2__bak { font-size: 12px; color: rgba(243,238,227,.78); }
+.s-c2__ttl { display: flex; align-items: baseline; gap: 8px; }
+.s-c2__ttl b { font-size: 20px; font-weight: 650; letter-spacing: .04em; color: #F3EEE3; }
+.s-c2__ttl i { font-style: normal; font-size: 12px; letter-spacing: .16em; color: rgba(243,238,227,.72); }
+.s-c2 .p { padding: 15px 20px 0; }
+.s-c2 .p__head { display: flex; align-items: baseline; gap: 7px; }
+.s-c2 .p__cn { font-size: 17px; font-weight: 650; letter-spacing: .02em; }
+.s-c2 .p__en { font-size: 12px; letter-spacing: .04em; color: #6A5C4E; font-variant-numeric: tabular-nums; }
+.s-c2 .p__body { margin: 9px 0 0; font-size: 16px; line-height: 1.85; }
+.s-c2 .quote { margin-top: 12px; padding: 2px 0 2px 15px; border-left: 2px solid #9C3A2E; }
+.s-c2 .quote__meta { display: flex; align-items: baseline; gap: 7px; font-size: 12px; color: #6A5C4E; }
+.s-c2 .quote__meta em { font-style: normal; font-size: 12px; letter-spacing: .08em; color: #9C3A2E; }
+.s-c2 .quote__body { margin: 6px 0 0; font-size: 16px; line-height: 1.8; }
+.s-c2 .quote__figs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 9px; }
+.s-c2 .quote__figs .ph { aspect-ratio: 1 / 1; border: 1px solid rgba(34,30,26,.18); }
+.s-c2 .quote__counts { margin-top: 7px; font-size: 12px; color: #6A5C4E; font-variant-numeric: tabular-nums; }
+.s-c2 .p__counts { display: flex; gap: 18px; padding: 11px 0 14px; font-size: 12px; color: #6A5C4E; font-variant-numeric: tabular-nums; }
+.s-c2 .p__counts b { color: #221E1A; font-weight: 600; }
+.s-c2__rule { height: 1px; background: #221E1A; margin: 0 20px; }
+.s-c2__rlhead { display: flex; justify-content: space-between; padding: 12px 20px 2px; font-size: 12px; color: #6A5C4E; }
+.s-c2 .rp { display: grid; grid-template-columns: 26px 1fr; gap: 10px; margin: 0 20px; padding: 13px 0; border-bottom: 1px solid rgba(34,30,26,.18); }
+.s-c2 .rp__floor { font-size: 12px; color: #9C3A2E; font-variant-numeric: tabular-nums; padding-top: 1px; }
+.s-c2 .rp__head { display: flex; align-items: baseline; gap: 7px; }
+.s-c2 .rp__cn { font-size: 13px; font-weight: 600; }
+.s-c2 .rp__en { font-size: 12px; color: #6A5C4E; }
+.s-c2 .rp__to { font-size: 12px; color: #9C3A2E; }
+.s-c2 .rp__body { margin: 5px 0 0; font-size: 16px; line-height: 1.75; }
+.s-c2 .rp--sub { margin-left: 22px; }
+.s-c2__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 20px; background: #17130F; }
+.s-c2__bar .ph-say { flex: 1; font-size: 12px; letter-spacing: .02em; color: rgba(243,238,227,.66); }
+.s-c2__bar .send { font-size: 12px; letter-spacing: .1em; color: #F3EEE3; border: 1px solid rgba(243,238,227,.5); padding: 3px 10px; }
+
+/* ============================================================
+   C3 · BeReal —— 一屏一条：时间戳当主角 + 满版照片位 + 零强调色
+   ============================================================ */
+.s-c3 { background: #0A0A0A; color: #F4F4F4; }
+.s-c3__top { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 4px; font-size: 12px; color: rgba(255,255,255,.68); }
+.s-c3__clock { padding: 2px 16px 0; font-size: 86px; line-height: .84; font-weight: 300; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+.s-c3__sub { padding: 8px 16px 13px; font-size: 12px; letter-spacing: .12em; color: rgba(255,255,255,.62); }
+.s-c3__photo { position: relative; height: 316px; }
+.s-c3__photo .ph { height: 100%; }
+.s-c3__photo .band { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: rgba(255,255,255,.85); }
+.s-c3__author { display: flex; align-items: center; gap: 9px; padding: 13px 16px 0; }
+.s-c3__av { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.18); color: #fff; font-size: 12px; font-weight: 600; display: grid; place-items: center; }
+.s-c3__who { font-size: 13px; }
+.s-c3__who span { color: rgba(255,255,255,.6); font-size: 12px; margin-left: 6px; }
+.s-c3 .p__body { padding: 10px 16px 0; margin: 0; font-size: 16px; line-height: 1.75; color: rgba(255,255,255,.9); }
+.s-c3__counts { display: flex; gap: 20px; padding: 13px 16px; margin-top: 12px; border-top: 1px solid rgba(255,255,255,.18); border-bottom: 1px solid rgba(255,255,255,.18); font-size: 12px; color: rgba(255,255,255,.78); font-variant-numeric: tabular-nums; }
+.s-c3__counts b { color: #F4F4F4; font-weight: 600; }
+.s-c3__cmt { padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,.1); }
+.s-c3__cmt p { margin: 0; font-size: 13px; line-height: 1.7; color: rgba(255,255,255,.82); }
+.s-c3__cmt span { font-size: 12px; color: rgba(255,255,255,.58); margin-right: 7px; }
+.s-c3__hint { position: absolute; left: 16px; right: 16px; bottom: 13px; text-align: center; font-size: 12px; letter-spacing: .1em; color: rgba(255,255,255,.55); }
+
+/* ============================================================
+   C4 · Ivory / Tweetbot —— 深色工具壳：紧凑卡片 + 行内胶囊 + 图标 tabbar
+   ============================================================ */
+.s-c4 { background: #121418; color: #E7E9EC; }
+.s-c4__bar { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px 11px; border-bottom: 1px solid #23262C; }
+.s-c4__bar b { font-size: 14px; font-weight: 650; }
+.s-c4__bar .seg { display: flex; gap: 2px; padding: 2px; background: #1C1F25; border-radius: 999px; }
+.s-c4__bar .seg i { font-style: normal; font-size: 12px; padding: 3px 9px; border-radius: 999px; color: #8E959E; }
+.s-c4__bar .seg i.on { background: #2A2E36; color: #E7E9EC; }
+.s-c4 .card { margin: 9px 10px 0; padding: 11px 11px 4px; background: #1A1D22; border: 1px solid #252932; border-radius: 12px; }
+.s-c4 .p__head { display: grid; grid-template-columns: 32px 1fr; gap: 9px; align-items: center; }
+.s-c4 .av { width: 32px; height: 32px; }
+.s-c4 .p__who { font-size: 13.5px; font-weight: 600; }
+.s-c4 .p__who span { font-size: 12px; font-weight: 400; color: #8E959E; margin-left: 5px; }
+.s-c4 .p__body { margin: 8px 0 0; font-size: 16px; line-height: 1.7; color: #DBDFE4; }
+.s-c4 .figs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px; }
+.s-c4 .figs .ph { aspect-ratio: 1 / 1; border-radius: 7px; }
+.s-c4 .figs--wide { grid-template-columns: 1fr; }
+.s-c4 .figs--wide .ph { aspect-ratio: 21 / 9; }
+.s-c4 .acts { display: flex; gap: 6px; padding: 9px 0 5px; }
+.s-c4 .pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px 4px 7px; border-radius: 999px; background: rgba(255,255,255,.055); font-size: 12px; color: #A3ABB4; font-variant-numeric: tabular-nums; }
+.s-c4 .pill.on { color: #4FD1C5; background: rgba(79,209,197,.13); }
+.s-c4 .pill svg { width: 14px; height: 14px; }
+.s-c4__tabs { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: #0F1114; border-top: 1px solid #23262C; padding: 8px 0 9px; }
+.s-c4__tabs div { display: grid; justify-items: center; gap: 3px; font-size: 12px; color: #8A9099; }
+.s-c4__tabs div.on { color: #4FD1C5; }
+.s-c4__tabs svg { width: 20px; height: 20px; }
+
+/* ============================================================
+   C5 · 中文内容瀑布流（App #07）—— 双列错落封面 + 白卡 + 一点品牌红
+   ============================================================ */
+.s-c5 { background: #F4F4F7; color: #17191F; }
+.s-c5__top { display: flex; align-items: center; gap: 8px; padding: 12px 10px 8px; }
+.s-c5__search { flex: 1; height: 32px; border-radius: 999px; background: #E7E7EE; display: flex; align-items: center; padding: 0 12px; font-size: 12px; color: #5B5B67; }
+.s-c5__plus { width: 32px; height: 32px; border-radius: 50%; background: #E02338; color: #fff; display: grid; place-items: center; font-size: 19px; }
+.s-c5__tabs { display: flex; gap: 18px; padding: 2px 14px 10px; font-size: 14px; font-weight: 600; color: #6A6A76; }
+.s-c5__tabs .on { color: #17191F; position: relative; }
+.s-c5__tabs .on::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); bottom: -6px; width: 18px; height: 2.5px; border-radius: 2px; background: #E02338; }
+.s-c5__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 8px 66px; }
+.s-c5 .col { display: grid; gap: 6px; align-content: start; }
+.s-c5 .cc { background: #fff; border-radius: 10px; overflow: hidden; }
+.s-c5 .cover { position: relative; }
+.s-c5 .cover[data-r="square"] { aspect-ratio: 1 / 1; }
+.s-c5 .cover[data-r="tall"] { aspect-ratio: 3 / 4; }
+.s-c5 .cover[data-r="wide"] { aspect-ratio: 16 / 10; }
+.s-c5 .t { margin: 0; padding: 7px 8px 0; font-size: 16px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.s-c5 .meta { display: flex; align-items: center; gap: 5px; padding: 7px 8px 9px; font-size: 12px; color: #6A6A76; }
+.s-c5 .meta .av { width: 20px; height: 20px; }
+.s-c5 .meta .nm { max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s-c5 .like { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; }
+.s-c5 .like.on { color: #D02035; }
+.s-c5 .like svg { width: 12px; height: 12px; }
+.s-c5__tabsbar { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; background: rgba(255,255,255,.94); border-top: 1px solid #E3E3EA; }
+.s-c5__tabsbar div { display: grid; justify-items: center; gap: 2px; font-size: 12px; color: #6A6A76; }
+.s-c5__tabsbar div.on { color: #17191F; font-weight: 600; }
+.s-c5__tabsbar svg { width: 20px; height: 20px; }
+.s-c5__fab { position: absolute; right: 14px; bottom: 70px; width: 46px; height: 46px; border-radius: 50%; background: #E02338; color: #fff; display: grid; place-items: center; box-shadow: 0 6px 16px rgba(224,35,56,.34); }
+
+/* ============================================================
+   C6 · 中国传统色 · 节气色谱（East #07）—— 我的页 + 色带导航
+   ============================================================ */
+.s-c6 { background: #F5F0E4; color: #2B2622; }
+.s-c6__head { display: grid; grid-template-columns: 58px 1fr; gap: 13px; align-items: center; padding: 20px 16px 14px; }
+.s-c6 .av { width: 58px; height: 58px; font-size: 20px; }
+.s-c6__nm { font-size: 20px; font-weight: 650; letter-spacing: .02em; }
+.s-c6__hd { font-size: 12px; color: #71634E; margin-top: 3px; }
+.s-c6__stats { display: grid; grid-template-columns: repeat(3, 1fr); padding: 11px 16px 13px; border-top: 1px solid rgba(43,38,34,.16); border-bottom: 1px solid rgba(43,38,34,.16); }
+.s-c6 .sv { font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.s-c6 .sl { font-size: 12px; color: #71634E; margin-top: 2px; }
+.s-c6__seg { display: flex; gap: 20px; padding: 13px 16px 10px; font-size: 13px; color: #71634E; }
+.s-c6__seg .on { color: #2B2622; font-weight: 600; position: relative; }
+.s-c6__seg .on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; background: #9C3A2E; }
+.s-c6 .row { display: grid; grid-template-columns: 50px 1fr; gap: 11px; padding: 12px 16px 13px; border-bottom: 1px solid rgba(43,38,34,.12); }
+.s-c6 .chip { height: 50px; display: grid; place-items: center; border-radius: 4px; font-size: 12px; font-variant-numeric: tabular-nums; color: #2B2622; background: var(--c); letter-spacing: .01em; }
+.s-c6 .row p { margin: 0; font-size: 16px; line-height: 1.75; }
+.s-c6 .row .meta { margin-top: 5px; font-size: 12px; color: #71634E; }
+.s-c6 .row .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 7px; }
+.s-c6 .row .thumbs .ph { aspect-ratio: 1 / 1; border-radius: 3px; }
+.s-c6__topics { padding: 14px 16px 0; }
+.s-c6__topics h4 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: #71634E; letter-spacing: .02em; }
+.s-c6__topics .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.s-c6__topics .tag { font-size: 12px; padding: 3px 9px; border: 1px solid rgba(43,38,34,.3); border-radius: 999px; color: #3A332C; }
+.s-c6__band { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 10px 12px; background: linear-gradient(0deg, #F5F0E4 74%, rgba(245,240,228,0)); }
+.s-c6__bandrow { display: flex; align-items: flex-end; gap: 3px; }
+.s-c6 .bar { flex: 1; height: 40px; border-radius: 3px 3px 0 0; background: var(--c); }
+.s-c6 .bar.on { flex: 1.9; height: 72px; box-shadow: 0 -2px 0 rgba(43,38,34,.22); }
+.s-c6__bandtxt { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: #71634E; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>溪流 · 六候选缩略图</h1>
+  <p class="sub">
+    六格配方：最佳设计师 2（C1 COLLINS / C2 石汉瑞）＋ 现实参照 2（C3 BeReal / C4 Ivory·Tweetbot）＋ 秒数轮盘 2（C5 App 风格库 #07 中文内容瀑布流 / C6 East #07 中国传统色·节气色谱）。
+    每格是该候选最关键的一屏，内容全部取自 <code>src/data/mock.json</code> 的真标题、真正文与真计数；照片位一律程序化材质（无位图、无外链、无 CDN、无图标库）。
+    温度配比：<b>大胆 3</b>（C1 / C2 / C3）· 安静 1（C4）· 中性 2（C5 / C6）；其中 C2 是六格中唯一的“用力过头”样张，用来标定上限。
+    由于本产品将接真实微博账号，六格都要扛得住真实内容形态：转发卡 / 九宫格与视频封面 / 长文折叠 / #话题# 与 @提及 / 三计数带图标 / 相对时间。C1 这一格把<strong>转发卡（理由 + 原博嵌卡 + “+6”）+ 九宫格 + 相对时间</strong>画成了实物；C5 带 #话题#；C4 的三计数带图标。长文折叠与认证标识在 mock 里没有样本（最长正文 32 字 = 2 行；用户表无认证字段），只在规则与风险清单里处理——见 <code>polish-log.md</code>。
+  </p>
+</div>
+
+<div class="grid">
+
+  <!-- ============ C1 COLLINS ============ -->
+  <figure class="cand" data-cand="C1">
+    <figcaption class="cand__head">
+      <span class="cand__no">C1</span>
+      <span class="cand__style">风格 1 · COLLINS（品牌即体验 → 界面栅格）</span>
+      <span class="cand__temp t-bold">大胆</span>
+      <span class="cand__screen">用在：时间线</span>
+      <span class="cand__note">借三条：黑白骨架、唯一强调色只给“当前 / 已互动”；极端字号比（62px 日期 ↔ 16px 正文）；四列栅格共用落点。<b>真实形态</b>：转发卡（理由 + 原博嵌卡）、九宫格（9 张全可见）、相对时间（“1 小时前 / 昨天 22:58”）；长文折叠规则已定（&gt;6 行 → 「展开全文」），但本批 mock 最长 32 字（2 行），<b>无样本可验</b>。</span>
+    </figcaption>
+    <div class="screen s-c1" data-screen="c1">
+      <div class="s-c1__guides" aria-hidden="true"></div>
+      <div class="s-c1__top">
+        <div class="s-c1__mark">溪流<span>Rill</span></div>
+        <div class="s-c1__now">2026 周一 · 30 条 / 12 人</div>
+      </div>
+      <div class="s-c1__date">
+        <div class="s-c1__dnum">11.16</div>
+      </div>
+      <div class="s-c1__feed">
+        <article class="p">
+          <div class="p__head">
+            <span class="p__who">城市漫游</span><span class="p__en">citywalk</span>
+            <span class="p__time">昨天 22:58</span>
+          </div>
+          <p class="p__body">看到就转了，值得留一份。</p>
+          <div class="p__quote">
+            <div class="q__head"><b>江余</b><span>jiangyu · 昨天 20:58</span></div>
+            <p class="q__body">地铁上有人让了座，很普通的一件事，让整节车厢都柔和了一点。</p>
+            <div class="q__meta"><span>转发 3</span><span>回复 1</span><span>赞 20</span></div>
+          </div>
+          <div class="p__counts">
+            <div><div class="num">1</div><div class="lab">转发</div></div>
+            <div><div class="num">3</div><div class="lab">回复</div></div>
+            <div><div class="num num--on">126</div><div class="lab">已赞</div></div>
+          </div>
+        </article>
+        <article class="p">
+          <div class="p__head">
+            <span class="p__who">林见</span><span class="p__en">linjian</span>
+            <span class="p__time">1 小时前</span>
+          </div>
+          <p class="p__body">雨停之后又绕了一段路，路面的水洼把整条街的灯都翻了一遍。</p>
+          <div class="p__figs p__figs--three">
+            <div class="ph" style="--h:57"></div>
+            <div class="ph" style="--h:110"></div>
+            <div class="ph" style="--h:163"></div>
+            <div class="ph" style="--h:216"></div>
+            <div class="ph" style="--h:269"></div>
+            <div class="ph" style="--h:322"></div>
+            <div class="ph" style="--h:55"></div>
+            <div class="ph" style="--h:108"></div>
+            <div class="ph" style="--h:161"></div>
+          </div>
+          <div class="p__counts">
+            <div><div class="num">13</div><div class="lab">转发</div></div>
+            <div><div class="num">1</div><div class="lab">回复</div></div>
+            <div><div class="num">42</div><div class="lab">赞</div></div>
+          </div>
+        </article>
+      </div>
+      <nav class="s-c1__tabs">
+        <a href="#" class="on">时间线</a><a href="#">发博</a><a href="#">我的</a><a href="#">设置</a>
+      </nav>
+    </div>
+  </figure>
+
+  <!-- ============ C2 STEINER ============ -->
+  <figure class="cand" data-cand="C2">
+    <figcaption class="cand__head">
+      <span class="cand__no">C2</span>
+      <span class="cand__style">风格 2 · Henry Steiner 石汉瑞（东西方视觉咬合）</span>
+      <span class="cand__temp t-bold">大胆</span>
+      <span class="cand__screen">用在：详情</span>
+      <span class="cand__note">借三条：中文昵称与拉丁 handle 共用基线（一次咬合）；墨黑 + 纸白 + 朱红只给“内容关系”；引用用缩进加细线，把“谁在说谁”做成版面。<b>六格里唯一的“用力过头”样张</b>。</span>
+    </figcaption>
+    <div class="screen s-c2" data-screen="c2">
+      <div class="s-c2__head">
+        <div class="s-c2__bak">返回 时间线</div>
+        <div class="s-c2__ttl"><b>详情</b><i>detail</i></div>
+      </div>
+      <article class="p">
+        <div class="p__head">
+          <span class="p__cn">城市漫游</span><span class="p__en">citywalk · 11-15 16:57</span>
+        </div>
+        <p class="p__body">看到就转了，值得留一份。</p>
+        <div class="quote">
+          <div class="quote__meta"><em>转发</em><span>深夜电台 · lateshow · 11-15 13:57</span></div>
+          <p class="quote__body">把衣柜收拾了一遍，发现常穿的衣服其实只有几件。</p>
+          <div class="quote__figs">
+            <div class="ph" style="--h:194"><span class="ph__alt">水面反光</span></div>
+            <div class="ph" style="--h:247"><span class="ph__alt">旧书页</span></div>
+            <div class="ph" style="--h:300"><span class="ph__alt">咖啡杯</span></div>
+          </div>
+          <div class="quote__counts">转发 22 · 回复 3 · 赞 99</div>
+        </div>
+        <div class="p__counts"><span>转发 <b>7</b></span><span>回复 <b>3</b></span><span>赞 <b>168</b></span></div>
+      </article>
+      <div class="s-c2__rule"></div>
+      <div class="s-c2__rlhead"><span>回复</span><span>3 条</span></div>
+      <div class="rp">
+        <div class="rp__floor">01</div>
+        <div>
+          <div class="rp__head"><span class="rp__cn">苏未</span><span class="rp__en">suwei</span></div>
+          <p class="rp__body">下次一起去。</p>
+        </div>
+      </div>
+      <div class="rp">
+        <div class="rp__floor">02</div>
+        <div>
+          <div class="rp__head"><span class="rp__cn">阿野</span><span class="rp__en">aye</span><span class="rp__to">回复 苏未</span></div>
+          <p class="rp__body">我也有同感。</p>
+        </div>
+      </div>
+      <div class="rp">
+        <div class="rp__floor">03</div>
+        <div>
+          <div class="rp__head"><span class="rp__cn">江余</span><span class="rp__en">jiangyu</span></div>
+          <p class="rp__body">下次一起去。</p>
+        </div>
+      </div>
+      <div class="s-c2__bar"><span class="ph-say">说点什么</span><span class="send">发送 send</span></div>
+    </div>
+  </figure>
+
+  <!-- ============ C3 BeReal ============ -->
+  <figure class="cand" data-cand="C3">
+    <figcaption class="cand__head">
+      <span class="cand__no">C3</span>
+      <span class="cand__style">风格 3 · BeReal（一天一次 · 时间戳当主角）</span>
+      <span class="cand__temp t-bold">大胆</span>
+      <span class="cand__screen">用在：详情</span>
+      <span class="cand__note">借三条：时间戳做成版面主角（86px 的 12:00）；一屏一条（满版照片位 + 紧凑评论条）；只有黑白两色、零装饰、零强调色。</span>
+    </figcaption>
+    <div class="screen s-c3" data-screen="c3">
+      <div class="s-c3__top"><span>时间线</span><span>1 / 30</span></div>
+      <div class="s-c3__clock">12:00</div>
+      <div class="s-c3__sub">2026 · 11 · 16 &nbsp; 周一</div>
+      <div class="s-c3__photo">
+        <div class="ph" style="--h:20"><span class="ph__alt">灰蓝色天空</span></div>
+        <div class="band"></div>
+      </div>
+      <div class="s-c3__author">
+        <div class="s-c3__av" style="--h:312">舟</div>
+        <div class="s-c3__who">沉舟<span>chenzhou</span></div>
+      </div>
+      <p class="p__body">今天的云像被风推着走的棉花，站在路口看了三分钟才想起来要赶地铁。</p>
+      <div class="s-c3__counts"><span>转发 <b>0</b></span><span>回复 <b>2</b></span><span>赞 <b>5</b></span></div>
+      <div class="s-c3__cmt"><p><span>苏未</span>下次一起去。</p></div>
+      <div class="s-c3__cmt"><p><span>顾行</span>我也有同感。</p></div>
+      <div class="s-c3__hint">上滑 下一条</div>
+    </div>
+  </figure>
+
+  <!-- ============ C4 IVORY ============ -->
+  <figure class="cand" data-cand="C4">
+    <figcaption class="cand__head">
+      <span class="cand__no">C4</span>
+      <span class="cand__style">风格 4 · Ivory / Tweetbot（Tapbots · 微客户端手艺）</span>
+      <span class="cand__temp t-calm">安静</span>
+      <span class="cand__screen">用在：时间线</span>
+      <span class="cand__note">借三条：行内操作不跳页（胶囊就地展开）；统一笔触的自制图标（1.75 描边、24 网格）；tabbar 是产品的“手”。风险：与现有基线同家族，换皮不算方向。</span>
+    </figcaption>
+    <div class="screen s-c4" data-screen="c4">
+      <div class="s-c4__bar">
+        <b>时间线</b>
+        <div class="seg"><i class="on">关注</i><i>推荐</i></div>
+      </div>
+      <article class="card">
+        <div class="p__head">
+          <div class="av" style="--h:268">摄</div>
+          <div><div class="p__who">摄影笔记<span>@shutterlog</span></div></div>
+        </div>
+        <p class="p__body">换了新的水杯，泡了最普通的茶，一天里居然多出一点仪式感。</p>
+        <div class="figs">
+          <div class="ph" style="--h:94"><span class="ph__alt">绿植与窗台</span></div>
+          <div class="ph" style="--h:147"><span class="ph__alt">夜色路灯</span></div>
+          <div class="ph" style="--h:200"><span class="ph__alt">水面反光</span></div>
+        </div>
+        <div class="acts">
+          <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 8.5h10.6"/><path d="M14.2 5.4l3.2 3.1-3.2 3.1"/><path d="M17.5 15.5H6.9"/><path d="M9.8 12.4 6.6 15.5l3.2 3.1"/></svg>17</span>
+          <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.3c0 3.6-3.6 6.4-8 6.4-1 0-2-.2-2.9-.5L5 20l1.1-3.4A6.3 6.3 0 0 1 4 12.3C4 8.7 7.6 6 12 6s8 2.7 8 6.3z"/></svg>2</span>
+          <span class="pill on"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>10</span>
+        </div>
+      </article>
+      <article class="card">
+        <div class="p__head">
+          <div class="av" style="--h:200">漫</div>
+          <div><div class="p__who">城市漫游<span>@citywalk</span></div></div>
+        </div>
+        <p class="p__body">骑车穿过老城区，修车铺的收音机在放一首很旧的歌，慢得像没有尽头。</p>
+        <div class="acts">
+          <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 8.5h10.6"/><path d="M14.2 5.4l3.2 3.1-3.2 3.1"/><path d="M17.5 15.5H6.9"/><path d="M9.8 12.4 6.6 15.5l3.2 3.1"/></svg>15</span>
+          <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.3c0 3.6-3.6 6.4-8 6.4-1 0-2-.2-2.9-.5L5 20l1.1-3.4A6.3 6.3 0 0 1 4 12.3C4 8.7 7.6 6 12 6s8 2.7 8 6.3z"/></svg>1</span>
+          <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>116</span>
+        </div>
+      </article>
+      <article class="card">
+        <div class="p__head">
+          <div class="av" style="--h:168">见</div>
+          <div><div class="p__who">林见<span>@linjian</span></div></div>
+        </div>
+        <p class="p__body">刚做完一顿简单的饭，番茄鸡蛋面，不好看但很好吃。</p>
+        <div class="figs figs--wide">
+          <div class="ph" style="--h:316"><span class="ph__alt">晚霞</span></div>
+        </div>
+      </article>
+      <nav class="s-c4__tabs">
+        <div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.2v-5.1H9.2V20H5a1 1 0 0 1-1-1z"/></svg>时间线</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>发博</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.7"/><path d="M5 19.6c0-3.3 3.1-5.4 7-5.4s7 2.1 7 5.4"/></svg>我的</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"/><circle cx="9.5" cy="7.5" r="1.9" fill="#0F1114"/><circle cx="15" cy="12" r="1.9" fill="#0F1114"/><circle cx="10.5" cy="16.5" r="1.9" fill="#0F1114"/></svg>设置</div>
+      </nav>
+    </div>
+  </figure>
+
+  <!-- ============ C5 WATERFALL ============ -->
+  <figure class="cand" data-cand="C5">
+    <figcaption class="cand__head">
+      <span class="cand__no">C5</span>
+      <span class="cand__style">风格 5 · 中文内容瀑布流（App 风格库 #07）</span>
+      <span class="cand__temp t-mid">中性</span>
+      <span class="cand__screen">用在：时间线</span>
+      <span class="cand__note">借三条：双列错落封面（1:1 / 3:4 / 16:10）制造节奏；两行标题 + 底部作者行；品牌红只给“当前 tab / 已赞 / 发布”。<b>已裁决</b>：captain 明确豁免 spec §4.7 的单列假设（这是“最不一样”的那条）；若最终选 D3，spec 需同步改“一屏预算 / 列数 / 卡片流”三处。</span>
+    </figcaption>
+    <div class="screen s-c5" data-screen="c5">
+      <div class="s-c5__top">
+        <div class="s-c5__search">搜一搜「雨后散步」</div>
+        <div class="s-c5__plus">＋</div>
+      </div>
+      <div class="s-c5__tabs"><span class="on">关注</span><span>推荐</span><span>附近</span></div>
+      <div class="s-c5__cols">
+        <div class="col">
+          <article class="cc">
+            <div class="cover ph" data-r="square" style="--h:20"><span class="ph__alt">灰蓝色天空</span></div>
+            <p class="t">今天的云像被风推着走的棉花，站在路口看了三分钟才想起来要赶地铁。</p>
+            <div class="meta">
+              <span class="av" style="--h:312">舟</span><span class="nm">沉舟</span>
+              <span class="like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>5</span>
+            </div>
+          </article>
+          <article class="cc">
+            <div class="cover ph" data-r="tall" style="--h:108"><span class="ph__alt">绿植与窗台</span></div>
+            <p class="t">周末把手机放在抽屉里，读了两章书，发现时间其实没有变快。</p>
+            <div class="meta">
+              <span class="av" style="--h:268">摄</span><span class="nm">摄影笔记</span>
+              <span class="like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>47</span>
+            </div>
+          </article>
+          <article class="cc">
+            <div class="cover ph" data-r="square" style="--h:196"><span class="ph__alt">晚霞</span></div>
+            <p class="t">今天的晚霞只持续了十分钟，正好被我赶上。</p>
+            <div class="meta">
+              <span class="av" style="--h:330">夜</span><span class="nm">深夜电台</span>
+              <span class="like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>173</span>
+            </div>
+          </article>
+        </div>
+        <div class="col">
+          <article class="cc">
+            <div class="cover ph" data-r="wide" style="--h:94"><span class="ph__alt">街角光斑</span></div>
+            <p class="t">把书翻到上次折角的地方，窗外刚好开始下雨，就没再抬头。</p>
+            <div class="meta">
+              <span class="av" style="--h:268">摄</span><span class="nm">摄影笔记</span>
+              <span class="like on"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>79</span>
+            </div>
+          </article>
+          <article class="cc">
+            <div class="cover ph" data-r="square" style="--h:316"><span class="ph__alt">晚霞</span></div>
+            <p class="t">刚做完一顿简单的饭，番茄鸡蛋面，不好看但很好吃。</p>
+            <div class="meta">
+              <span class="av" style="--h:168">见</span><span class="nm">林见</span>
+              <span class="like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>121</span>
+            </div>
+          </article>
+          <article class="cc">
+            <div class="cover ph" data-r="tall" style="--h:24"><span class="ph__alt">街角光斑</span></div>
+            <p class="t">骑车穿过老城区，修车铺的收音机在放一首很旧的歌，慢得像没有尽头。</p>
+            <div class="meta">
+              <span class="av" style="--h:200">漫</span><span class="nm">城市漫游</span>
+              <span class="like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>116</span>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="s-c5__fab">＋</div>
+      <nav class="s-c5__tabsbar">
+        <div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.2v-5.1H9.2V20H5a1 1 0 0 1-1-1z"/></svg>时间线</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>发博</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.7"/><path d="M5 19.6c0-3.3 3.1-5.4 7-5.4s7 2.1 7 5.4"/></svg>我的</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"/><circle cx="9.5" cy="7.5" r="1.9" fill="#fff"/><circle cx="15" cy="12" r="1.9" fill="#fff"/><circle cx="10.5" cy="16.5" r="1.9" fill="#fff"/></svg>设置</div>
+      </nav>
+    </div>
+  </figure>
+
+  <!-- ============ C6 SOLAR TERMS ============ -->
+  <figure class="cand" data-cand="C6">
+    <figcaption class="cand__head">
+      <span class="cand__no">C6</span>
+      <span class="cand__style">风格 6 · 中国传统色 · 节气色谱（East 风格库 #07）</span>
+      <span class="cand__temp t-mid">中性</span>
+      <span class="cand__screen">用在：我的</span>
+      <span class="cand__note">借三条：色条即导航、当前那条升高变宽；暖纸底 + 墨字（低刺激，久刷不累）；用“名字”组织颜色（我们把节气换成日期）。风险：“节气 = 导航”与内容没有因果关系，是万能隐喻。</span>
+    </figcaption>
+    <div class="screen s-c6" data-screen="c6">
+      <div class="s-c6__head">
+        <div class="av" style="--h:168">见</div>
+        <div>
+          <div class="s-c6__nm">林见</div>
+          <div class="s-c6__hd">linjian · 在城里找安静的地方。</div>
+        </div>
+      </div>
+      <div class="s-c6__stats">
+        <div><div class="sv">128</div><div class="sl">关注</div></div>
+        <div><div class="sv">964</div><div class="sl">粉丝</div></div>
+        <div><div class="sv">3</div><div class="sl">博文</div></div>
+      </div>
+      <div class="s-c6__seg"><span class="on">我的博文</span><span>赞过的</span></div>
+      <div class="row">
+        <div class="chip" style="--c:#E4CFAF">10:59</div>
+        <div>
+          <p>雨停之后又绕了一段路，路面的水洼把整条街的灯都翻了一遍。</p>
+          <div class="meta">转发 13 · 回复 1 · 赞 42</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="chip" style="--c:#E7D3B4">11:33</div>
+        <div>
+          <p>看到就转了，值得留一份。</p>
+          <div class="thumbs">
+            <div class="ph" style="--h:57"></div>
+            <div class="ph" style="--h:110"></div>
+            <div class="ph" style="--h:163"></div>
+          </div>
+          <div class="meta">转发 4 · 回复 1 · 赞 153</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="chip" style="--c:#E9D8BB">03:58</div>
+        <div>
+          <p>刚做完一顿简单的饭，番茄鸡蛋面，不好看但很好吃。</p>
+          <div class="meta">转发 8 · 回复 2 · 赞 121</div>
+        </div>
+      </div>
+      <div class="s-c6__topics">
+        <h4>常去的话题</h4>
+        <div class="tags"><span class="tag">雨后散步</span><span class="tag">城市散步</span><span class="tag">随手拍</span></div>
+      </div>
+      <div class="s-c6__band">
+        <div class="s-c6__bandrow">
+          <div class="bar" style="--c:#C9A98C"></div>
+          <div class="bar" style="--c:#B98A6E"></div>
+          <div class="bar" style="--c:#A97455"></div>
+          <div class="bar" style="--c:#8E6A56"></div>
+          <div class="bar" style="--c:#7E6A4F"></div>
+          <div class="bar" style="--c:#6E7F63"></div>
+          <div class="bar on" style="--c:#9C3A2E"></div>
+        </div>
+        <div class="s-c6__bandtxt"><span>11.10</span><span>11.16 周一</span></div>
+      </div>
+    </div>
+  </figure>
+
+</div>
+</body>
+</html>

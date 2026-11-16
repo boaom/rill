@@ -18,6 +18,11 @@ export interface Author {
   followerCount: number;
   postCount: number; // mock 中该作者的动态数；本人页显示时叠加已发布数
   isCurrentUser: boolean; // 恰好一条为 true
+  /**
+   * 认证标识（蓝/V 由 UI 决定颜色）：mock 必须提供布尔值，恰好 2 个 true。
+   * 在线适配层可能缺省（接口未返回）→ 读取侧一律用 `author.verified === true` 判断。
+   */
+  verified?: boolean;
 }
 
 /** 图片占位：无二进制资源，仅 hue + 比例 + alt */
@@ -44,6 +49,12 @@ export interface Post {
   repostOfId: string | null; // 被转发原文 id；只允许一层
   createdAt: number; // epoch ms，确定性
   counts: Counts;
+  /**
+   * 客户端尾巴，形如 '来自 iPhone 15 Pro'（不含前后空格）。
+   * mock 必须提供非空字符串（12 种取值，按作者固定）；新发布/在线可能缺省 →
+   * 读取侧回退到应用自己的尾巴（见 Detail.tsx 的 '来自 溪流'）。
+   */
+  source?: string;
 }
 
 /** mock.json: comments[] */

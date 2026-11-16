@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方向 B · 此刻 Rill Now（时间线 / 详情 / 发博）</title>
+<style>
+/* =====================================================================
+   方向 B · 此刻 Rill Now —— 版式家族：黑底 · 一屏一条 · 时间戳当签名
+   form 来自内容的哪里：每条只有 2 行短句 + 1–9 张图，一条正文占不满一屏，
+   但"什么时候"永远是确定的（12:00）；所以把 86px 的时间戳做成版面主角，
+   一条占一屏，用滑动代替列表——详情就是把同一屏往下摊开（评论 + 输入）。
+   tokens 覆盖见 tokens.md（本 :root 就是该方向的 tokens.css）
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: #141414; color: #F2F2F2;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  -webkit-font-smoothing: antialiased; }
+:root {
+  /* 颜色：黑底 + 单墨白；强调色在 B 里**主动弃用**（零彩色纪律） */
+  --rill-bg: #0A0A0A; --rill-surface: #101010; --rill-surface-2: #1A1A1A; --rill-surface-3: #262626;
+  --rill-border: #2A2A2A; --rill-border-strong: #6E6E6E;
+  --rill-text: #F2F2F2; --rill-text-2: #A9A9A9; --rill-text-3: #7E7E7E;
+  --rill-accent: #F2F2F2; --rill-accent-pressed: #D4D4D4; --rill-accent-soft: #1E1E1E; --rill-on-accent: #0A0A0A;
+  --rill-like: #F2F2F2; --rill-danger: #FF7A6B;
+  --rill-overlay: rgba(0, 0, 0, .62); --rill-toast-bg: #F2F2F2; --rill-toast-text: #0A0A0A; --rill-focus: #F2F2F2;
+  /* 字阶：正文 16 / 标签 12 / 时钟 86（新增 display） */
+  --rill-fs-11: 12px; --rill-fs-13: 13px; --rill-fs-15: 16px; --rill-fs-17: 17px; --rill-fs-20: 20px; --rill-fs-24: 24px;
+  --rill-fs-clock: 86px;
+  --rill-lh-tight: 1.25; --rill-lh-normal: 1.75; --rill-lh-relaxed: 1.85;
+  --rill-fw-regular: 400; --rill-fw-medium: 500; --rill-fw-semibold: 600;
+  --rill-space-2: 2px; --rill-space-4: 4px; --rill-space-6: 6px; --rill-space-8: 8px; --rill-space-12: 12px;
+  --rill-space-16: 16px; --rill-space-20: 20px; --rill-space-24: 24px; --rill-space-32: 32px;
+  --rill-radius-4: 2px; --rill-radius-8: 4px; --rill-radius-12: 6px; --rill-radius-16: 8px; --rill-radius-20: 10px; --rill-radius-full: 999px;
+  --rill-border-w: 1px; --rill-shadow-1: none; --rill-shadow-2: 0 6px 20px rgba(0,0,0,.5); --rill-shadow-3: 0 16px 40px rgba(0,0,0,.6);
+  --rill-gutter: 20px; --rill-header-h: 96px; --rill-tabbar-h: 56px; --rill-hit: 44px;
+  --rill-card-pad-y: 14px; --rill-card-pad-x: 20px; --rill-media-gap: 2px; --rill-line-clamp: 6;
+  --rill-textarea-min: 120px; --rill-compose-bar-h: 64px; --rill-avatar: 40px; --rill-avatar-sm: 28px;
+}
+
+/* 舞台 */
+.stage { display: flex; flex-wrap: wrap; gap: 28px 24px; align-items: flex-start; justify-content: center; padding: 28px 20px 48px; }
+.frame { margin: 0; }
+.frame .cap { font-size: 12px; color: #9A9A9A; padding: 0 2px 8px; display: flex; gap: 8px; align-items: baseline; }
+.frame .cap b { font-size: 13px; color: #E6E6E6; }
+.dev { width: 375px; height: 812px; border-radius: 26px; overflow: hidden; background: #000;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 44px rgba(0,0,0,.4); }
+html.only body { background: var(--rill-bg); }
+html.only .stage { display: block; padding: 0; }
+html.only .frame { display: none; }
+html.only .frame.is-on { display: block; }
+html.only .frame .cap { display: none; }
+html.only .dev { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+
+/* 屏 */
+.screen { container-type: inline-size; width: 100%; height: 100%; position: relative; background: var(--rill-bg); color: var(--rill-text); overflow: hidden; }
+.app { height: 100%; display: flex; flex-direction: column; }
+.app > * { flex: 0 0 auto; }
+
+/* 顶部：时钟是主角 */
+.bar { display: flex; align-items: flex-end; justify-content: space-between; padding: 18px var(--rill-gutter) 6px; }
+.clock { font-size: var(--rill-fs-clock); line-height: .88; font-weight: 300; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+.bar__r { text-align: right; font-size: 12px; color: var(--rill-text-3); font-variant-numeric: tabular-nums; }
+.bar__r b { display: block; font-size: 13px; color: var(--rill-text-2); font-weight: 400; }
+.stamp { padding: 0 var(--rill-gutter) 12px; font-size: 12px; color: var(--rill-text-3); letter-spacing: .02em; }
+
+/* 满版照片位：唯一的"彩色"来源（色相来自 mock media.hue） */
+.shot { margin: 0; position: relative; }
+.shot .ph { width: 100%; aspect-ratio: 1 / 1; position: relative; overflow: hidden;
+  background: radial-gradient(120% 120% at 26% 16%, hsl(var(--h) 40% 74%) 0%, hsl(var(--h) 30% 58%) 46%, hsl(var(--h) 22% 44%) 100%), hsl(var(--h) 26% 58%); }
+.shot .ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.24)); }
+.shot figcaption { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: #fff; background: rgba(6,8,10,.78); padding: 1px 7px; }
+.shot--wide .ph { aspect-ratio: 16 / 9; }
+/* 多图：1 张 = 满版方图；2 张 = 两联；3–9 张 = 3×3 条带（永不超过一屏的 1/3） */
+.shots { display: grid; gap: 2px; }
+.shots[data-n="2"] { grid-template-columns: 1fr 1fr; }
+.shots[data-n="2"] .ph, .shots[data-n="3"], .shots[data-n="4"], .shots[data-n="5"], .shots[data-n="6"],
+.shots[data-n="7"], .shots[data-n="8"], .shots[data-n="9"] { grid-template-columns: repeat(3, 1fr); }
+.shots[data-n="2"] .ph { aspect-ratio: 1 / 1; }
+.shots:not([data-n="2"]) .ph { aspect-ratio: 1 / 1; }
+.shots figcaption { left: 8px; bottom: 8px; }
+/* 转发：理由 + 原博 是一个单元，用一条轨连起来（不是两张整屏卡） */
+.quote { margin: 10px var(--rill-gutter) 0; padding: 2px 0 2px 14px; border-left: 2px solid var(--rill-border-strong); }
+.quote__head { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+.quote__head b { font-size: 14px; font-weight: 600; color: var(--rill-text); }
+.quote__head em { font-style: normal; font-size: 12px; color: var(--rill-text-3); }
+.quote p { margin: 6px 0 0; font-size: 15px; line-height: 1.75; color: var(--rill-text); }
+.quote__acts { margin-top: 8px; font-size: 12px; color: var(--rill-text-3); display: flex; gap: 14px; }
+/* 九宫选图格（发博预览） */
+.grid9 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+.grid9 .slot { aspect-ratio: 1 / 1; border: 1px dashed var(--rill-border); display: grid; place-items: center; color: var(--rill-border); font-size: 18px; }
+.grid9 .ph { aspect-ratio: 1 / 1; }
+
+/* 作者 + 正文 */
+.who { display: grid; grid-template-columns: var(--rill-avatar) 1fr; gap: 10px; align-items: center; padding: 8px var(--rill-gutter) 0; }
+.ini { width: var(--rill-avatar); height: var(--rill-avatar); border-radius: 50%; display: grid; place-items: center;
+  font-size: 15px; font-weight: 600; color: #0A0A0A;
+  background: radial-gradient(120% 120% at 30% 20%, hsl(var(--h) 60% 88%), hsl(var(--h) 45% 66%)); }
+.who b { font-size: 16px; font-weight: 600; }
+.who em { font-style: normal; font-size: 12px; color: var(--rill-text-3); margin-left: 8px; }
+.body { margin: 0; padding: 0 var(--rill-gutter); font-size: var(--rill-fs-15); line-height: var(--rill-lh-normal);
+  display: -webkit-box; -webkit-line-clamp: var(--rill-line-clamp); -webkit-box-orient: vertical; overflow: hidden; }
+.more { display: block; margin: 6px var(--rill-gutter) 0; font-size: 12px; color: var(--rill-text-2); text-decoration: underline; text-underline-offset: 2px; }
+
+/* 计数：只有白，没有彩色 */
+.acts { display: flex; gap: 26px; padding: 2px var(--rill-gutter) 0; }
+.acts button { all: unset; display: inline-flex; align-items: center; gap: 7px; min-height: 44px; min-width: 44px; cursor: pointer; color: var(--rill-text-2); }
+.acts svg { width: 20px; height: 20px; }
+.acts b { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--rill-text); }
+.acts .is-on { color: var(--rill-text); }
+.acts .is-on svg { fill: currentColor; }
+
+/* 滑动指示：一屏一条的"页码" */
+.pager { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 0 var(--rill-gutter); font-size: 12px; color: var(--rill-text-3); }
+.pager .ticks { flex: 1; height: 3px; background: repeating-linear-gradient(90deg, var(--rill-border) 0 6px, transparent 6px 10px); position: relative; }
+.pager .ticks::after { content: ""; position: absolute; left: 0; top: 0; height: 3px; width: 3.3%; background: var(--rill-text); }
+.pager .next { color: var(--rill-text-2); }
+
+/* 底栏：三个手绘图标（并入 C4 的"tabbar 是产品的手"） */
+.dock { height: var(--rill-tabbar-h); display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; margin-top: 14px; border-top: 1px solid var(--rill-border); background: var(--rill-bg); }
+.dock a { display: grid; place-items: center; min-height: 44px; color: var(--rill-text-3); }
+.dock a svg { width: 24px; height: 24px; }
+.dock a.is-on { color: var(--rill-text); }
+.dock a.mid { color: var(--rill-text); }
+.dock a.mid svg { width: 28px; height: 28px; }
+
+/* 详情：同一条向下摊开 */
+.dhead { display: flex; align-items: center; gap: 12px; padding: 14px var(--rill-gutter) 8px; }
+.dhead a { font-size: 12px; color: var(--rill-text-2); text-decoration: none; }
+.dhead h1 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: .04em; color: var(--rill-text-2); }
+.dhead .grow { flex: 1; }
+.dhead .clock-s { font-size: 26px; font-weight: 300; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.cmts { flex: 1 1 auto; min-height: 0; overflow: hidden; margin-top: 2px; border-top: 1px solid var(--rill-border); }
+.cmts__h { display: flex; justify-content: space-between; padding: 8px var(--rill-gutter) 5px; font-size: 12px; color: var(--rill-text-3); }
+.cmt { display: grid; grid-template-columns: var(--rill-avatar-sm) 1fr; gap: 10px; padding: 7px var(--rill-gutter); border-bottom: 1px solid var(--rill-border); }
+.cmt .ini { width: var(--rill-avatar-sm); height: var(--rill-avatar-sm); font-size: 12px; }
+.cmt__head { display: flex; align-items: baseline; gap: 6px; }
+.cmt__n { font-size: 13px; font-weight: 600; }
+.cmt__t { font-size: 12px; color: var(--rill-text-3); }
+.cmt__body { margin: 3px 0 0; font-size: var(--rill-fs-15); line-height: var(--rill-lh-normal); }
+.cbar { height: var(--rill-compose-bar-h); display: flex; align-items: center; gap: 10px; padding: 0 var(--rill-gutter); border-top: 1px solid var(--rill-border); background: var(--rill-surface); }
+.cbar .pill { flex: 1; height: 36px; border-radius: var(--rill-radius-full); background: var(--rill-surface-2); color: var(--rill-hint); font-size: 13px; display: flex; align-items: center; padding: 0 14px; }
+
+/* 发博：黑底一拍 */
+.compose { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.compose .shot { margin: 0; }
+.compose .shot .ph { aspect-ratio: 4 / 5; display: grid; place-items: center; background: var(--rill-surface-2); }
+.compose .shot .ph::after { display: none; }
+.compose .cam { width: 46px; height: 46px; color: var(--rill-text-3); }
+.compose .shot figcaption { top: 10px; bottom: auto; }
+.type { padding: 14px var(--rill-gutter) 0; flex: 1 1 auto; min-height: 0; }
+.type p { margin: 0; font-size: var(--rill-fs-15); line-height: var(--rill-lh-normal); color: var(--rill-text-3); }
+.type p b { font-weight: 400; color: var(--rill-text); }
+.caret { display: inline-block; width: 1px; height: 18px; background: var(--rill-text); vertical-align: -3px; margin-left: 1px; }
+.cbar2 { height: var(--rill-compose-bar-h); display: flex; align-items: center; gap: 12px; padding: 0 var(--rill-gutter); }
+.cbar2 .n { font-size: 12px; color: var(--rill-text-3); font-variant-numeric: tabular-nums; }
+.cbar2 .pub { margin-left: auto; font-size: 14px; font-weight: 600; color: var(--rill-on-accent); background: var(--rill-text); padding: 9px 22px; min-height: 44px; border-radius: var(--rill-radius-full); }
+
+/* ============================ 1440 ============================ */
+@container (min-width: 900px) {
+  .app { display: grid; grid-template-columns: 300px minmax(0, 640px) 260px; grid-template-rows: auto auto minmax(0, 1fr) auto auto; column-gap: 48px; justify-content: center; padding: 0 48px; }
+  .bar { grid-column: 1; grid-row: 1; display: block; padding: 40px 0 0; }
+  .bar__r { display: block; margin-top: 18px; }
+  .clock { font-size: 128px; display: block; }
+  .bar__r { text-align: left; margin-top: 14px; }
+  .stamp { grid-column: 1; grid-row: 2; padding: 6px 0 0; }
+  .who { grid-column: 1; grid-row: 3; padding: 0; align-self: start; }
+  .shot { grid-column: 2; grid-row: 1 / 5; margin-top: 40px; }
+  .body { grid-column: 2; grid-row: 5; padding: 0 0 8px; margin-top: 18px; }
+  .acts { grid-column: 3; grid-row: 1; padding: 40px 0 0; display: grid; gap: 18px; }
+  .acts b { font-size: 20px; }
+  .pager { grid-column: 3; grid-row: 3; margin: 0; display: block; padding-top: 24px; border-top: 1px solid var(--rill-border); }
+  .pager .ticks { margin: 12px 0; }
+  .dock { grid-column: 1 / -1; grid-row: 6; margin: 24px -48px 0; padding: 0 48px; grid-template-columns: repeat(3, max-content); gap: 32px; justify-content: start; height: 64px; }
+  .dock a { place-items: center start; }
+  /* 详情 */
+  .dhead { grid-column: 1 / -1; grid-row: 1; padding: 28px 0 12px; border-bottom: 1px solid var(--rill-border); }
+  .dhead .clock-s { font-size: 40px; }
+  .dhead + * { grid-row: 2; }
+  .dbody-wrap { grid-column: 1 / 2; grid-row: 2; padding-top: 24px; }
+  .shot.dshot { grid-column: 2; grid-row: 2; margin-top: 24px; }
+  .shot.dshot .ph { aspect-ratio: 3 / 2; }
+  .cmts { grid-column: 3; grid-row: 2 / 4; margin-top: 24px; border-top: 1px solid var(--rill-border); }
+  .cbar { grid-column: 1 / -1; grid-row: 4; margin: 0 -48px; padding: 0 48px; border-top: 1px solid var(--rill-border); }
+  /* 发博 */
+  .compose { grid-column: 1 / -1; grid-row: 1 / 4; display: grid; grid-template-columns: 300px minmax(0, 640px) 260px; column-gap: 48px; padding-top: 36px; }
+  .compose .shot { grid-column: 2; grid-row: 1; margin: 0; }
+  .compose .shot .ph { aspect-ratio: 4 / 3; }
+  .compose .type { grid-column: 1; grid-row: 1; padding: 0; align-self: start; }
+  .compose .type .clock-s2 { font-size: 96px; font-weight: 300; letter-spacing: -.05em; line-height: .9; display: block; margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+  .cbar2 { grid-column: 1 / -1; grid-row: 3; margin: 0 -48px; padding: 0 48px; }
+  .dock.only-mobile { display: none; }
+}
+:root {
+  --rill-hint:#9A9A9A;
+}
+
+/* ===== 亮色对照（?theme=light）—— B 的默认基调是暗底 ===== */
+html[data-theme="light"] {
+  --rill-bg:#F2F2F2; --rill-surface:#FFFFFF; --rill-surface-2:#E8E8E8; --rill-surface-3:#DCDCDC;
+  --rill-border:#D2D2D2; --rill-border-strong:#8A8A8A;
+  --rill-text:#0A0A0A; --rill-text-2:#4E4E4E; --rill-text-3:#6B6B6B;
+  --rill-accent:#0A0A0A; --rill-accent-pressed:#333333; --rill-accent-soft:#E6E6E6; --rill-on-accent:#FFFFFF;
+  --rill-like:#0A0A0A; --rill-danger:#A52A1B; --rill-overlay:rgba(0,0,0,.44);
+  --rill-toast-bg:#0A0A0A; --rill-toast-text:#F2F2F2; --rill-focus:#0A0A0A; --rill-hint:#5E5E5E;
+  --rill-shadow-2:0 6px 20px rgba(16,16,22,.10); --rill-shadow-3:0 16px 40px rgba(16,16,22,.16);
+}
+html[data-theme="light"] .shot .ph::after { background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.18)); }
+
+</style>
+</head>
+<body>
+<div class="stage">
+
+<!-- ============================ 1 · 时间线 ============================ -->
+<figure class="frame" data-screen="timeline">
+  <div class="cap"><b>B · 此刻</b><span>时间线 · 375</span></div>
+  <div class="dev">
+    <div class="screen">
+      <div class="app">
+        <div class="bar">
+          <span class="clock">12:00</span>
+          <span class="bar__r"><b>1 / 30</b>沉舟</span>
+        </div>
+        <div class="stamp">2026 · 11 · 16 周一 · 今天第 7 条</div>
+        <figure class="shots" data-part="media" data-n="2">
+          <div class="ph" style="--h:20"><figcaption>灰蓝</figcaption></div>
+          <div class="ph" style="--h:196"><figcaption>路口的云</figcaption></div>
+        </figure>
+        <div class="who" data-part="author">
+          <span class="ini" style="--h:312">沉</span>
+          <div><b>沉舟</b><em>chenzhou · 2 张图</em></div>
+        </div>
+        <p class="body" data-part="body">今天的云像被风推着走的棉花，站在路口看了三分钟才想起来要赶地铁。</p>
+        <div class="acts" data-part="counts">
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 8.5h10.6"/><path d="M14.2 5.4l3.2 3.1-3.2 3.1"/><path d="M17.5 15.5H6.9"/><path d="M9.8 12.4 6.6 15.5l3.2 3.1"/></svg><b>1</b></button>
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.3c0 3.6-3.6 6.4-8 6.4-1 0-2-.2-2.9-.5L5 20l1.1-3.4A6.3 6.3 0 0 1 4 12.3C4 8.7 7.6 6 12 6s8 2.7 8 6.3z"/></svg><b>3</b></button>
+          <button class="is-on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg><b>126</b></button>
+        </div>
+        <div class="pager"><span>第 1 / 30 条</span><span class="ticks"></span><span class="next">上滑看下一条</span></div>
+        <nav class="dock">
+          <a href="#" class="is-on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h11"/><path d="M4 17h7"/></svg></a>
+          <a href="#" class="mid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5h3.2L9 6h6l1.8 2.5H20a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.4"/></svg></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c0-3.4 3.1-5.6 7-5.6s7 2.2 7 5.6"/></svg></a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</figure>
+
+<!-- ============================ 2 · 详情 ============================ -->
+<figure class="frame" data-screen="detail">
+  <div class="cap"><b>B · 此刻</b><span>详情 · 375</span></div>
+  <div class="dev">
+    <div class="screen">
+      <div class="app">
+        <div class="dhead">
+          <a href="#">← 回到时间线</a>
+          <span class="grow"></span>
+          <span class="clock-s">12:00</span>
+        </div>
+        <div class="who" data-part="author" style="padding-top:6px">
+          <span class="ini" style="--h:312">城</span>
+          <div><b>城市漫游</b><em>citywalk · 11-16 12:00</em></div>
+        </div>
+        <p class="body" data-part="body" style="margin-top:10px">看到就转了，值得留一份。</p>
+        <div class="quote" data-part="media">
+          <div class="quote__head"><b>江余</b><em>jiangyu · 11-16 11:40</em></div>
+          <p>地铁上有人让了座，很普通的一件事，让整节车厢都柔和了一点。</p>
+          <div class="quote__acts"><span>转发 3</span><span>回复 1</span><span>赞 20</span></div>
+        </div>
+        <div class="acts" data-part="counts">
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 8.5h10.6"/><path d="M14.2 5.4l3.2 3.1-3.2 3.1"/><path d="M17.5 15.5H6.9"/><path d="M9.8 12.4 6.6 15.5l3.2 3.1"/></svg><b>0</b></button>
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.3c0 3.6-3.6 6.4-8 6.4-1 0-2-.2-2.9-.5L5 20l1.1-3.4A6.3 6.3 0 0 1 4 12.3C4 8.7 7.6 6 12 6s8 2.7 8 6.3z"/></svg><b>2</b></button>
+          <button class="is-on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg><b>5</b></button>
+        </div>
+        <div class="cmts">
+          <div class="cmts__h"><span>回复</span><span>2 条</span></div>
+          <div class="cmt">
+            <span class="ini" style="--h:210">苏</span>
+            <div>
+              <div class="cmt__head"><span class="cmt__n">苏未</span><span class="cmt__t">现在</span></div>
+              <p class="cmt__body">下次一起去。</p>
+            </div>
+          </div>
+          <div class="cmt">
+            <span class="ini" style="--h:12">顾</span>
+            <div>
+              <div class="cmt__head"><span class="cmt__n">顾行</span><span class="cmt__t">回复 苏未</span></div>
+              <p class="cmt__body">我也有同感。</p>
+            </div>
+          </div>
+        </div>
+        <div class="cbar"><span class="pill">说点什么</span></div>
+      </div>
+    </div>
+  </div>
+</figure>
+
+<!-- ============================ 3 · 发博 ============================ -->
+<figure class="frame" data-screen="compose">
+  <div class="cap"><b>B · 此刻</b><span>发博 · 375</span></div>
+  <div class="dev">
+    <div class="screen">
+      <div class="app">
+        <div class="dhead">
+          <a href="#">取消</a>
+          <span class="grow"></span>
+          <span class="clock-s">12:04</span>
+        </div>
+        <div class="compose">
+          <figure class="shot">
+            <div class="grid9">
+              <div class="ph" style="--h:57"></div>
+              <div class="ph" style="--h:110"></div>
+              <div class="ph" style="--h:163"></div>
+              <div class="slot">+</div><div class="slot">+</div><div class="slot">+</div>
+              <div class="slot">+</div><div class="slot">+</div><div class="slot">+</div>
+            </div>
+            <figcaption>已选 3 / 9 · 点空格继续选</figcaption>
+          </figure>
+          <div class="type">
+            <p><b>雨停之后又绕了一段路</b><span class="caret"></span></p>
+            <p style="margin-top:6px">#雨后散步#</p>
+          </div>
+        </div>
+        <div class="cbar2">
+          <span class="n">11 / 2000</span>
+          <button class="pub">发布</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</figure>
+
+</div>
+<script>
+  const qs = new URLSearchParams(location.search);
+  const theme = qs.get('theme');            // ?theme=dark|light —— 主题截图用
+  if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+  const only = qs.get('only');
+  if (only) {
+    document.documentElement.classList.add('only');
+    const f = document.querySelector(`.frame[data-screen="${only}"]`);
+    if (f) f.classList.add('is-on');
+  }
+</script>
+</body>
+</html>

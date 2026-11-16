@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方向 C · 格子 Rill Grid（时间线 / 详情 / 发博）</title>
+<style>
+/* =====================================================================
+   方向 C · 格子 Rill Grid —— 版式家族：浅灰底 + 白卡 + 双列错落封面
+   form 来自内容的哪里：30 条里 22 条带图、图片总数 100 张，比例混杂
+   （square / tall / wide，9 图占 7 条）——所以让"图的形状"当节奏，
+   双列错落排，标题只在封面下面占两行；详情才把一张卡摊平。
+   tokens 覆盖见 tokens.md（本 :root 就是该方向的 tokens.css）
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: #E7E7EC; color: #16161A;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  -webkit-font-smoothing: antialiased; }
+:root {
+  --rill-bg: #F4F4F7; --rill-surface: #FFFFFF; --rill-surface-2: #EDEDF2; --rill-surface-3: #E2E2EA;
+  --rill-border: #E3E3EA; --rill-border-strong: #8A8A96;
+  --rill-text: #16161A; --rill-text-2: #55555F; --rill-text-3: #6A6A76;
+  --rill-accent: #E02338; --rill-accent-pressed: #BC1A2C; --rill-accent-soft: #FDE8EA; --rill-on-accent: #FFFFFF;
+  --rill-like: #E02338; --rill-danger: #C81E2C;
+  --rill-overlay: rgba(16, 16, 22, .44); --rill-toast-bg: #16161A; --rill-toast-text: #FFFFFF; --rill-focus: #E02338;
+  --rill-fs-11: 12px; --rill-fs-13: 13px; --rill-fs-15: 16px; --rill-fs-17: 17px; --rill-fs-20: 20px; --rill-fs-24: 24px;
+  --rill-lh-tight: 1.35; --rill-lh-normal: 1.75; --rill-lh-relaxed: 1.85;
+  --rill-fw-regular: 400; --rill-fw-medium: 500; --rill-fw-semibold: 600;
+  --rill-space-2: 2px; --rill-space-4: 4px; --rill-space-6: 6px; --rill-space-8: 8px; --rill-space-12: 12px;
+  --rill-space-16: 16px; --rill-space-20: 20px; --rill-space-24: 24px; --rill-space-32: 32px;
+  --rill-radius-4: 4px; --rill-radius-8: 8px; --rill-radius-12: 12px; --rill-radius-16: 16px; --rill-radius-20: 20px; --rill-radius-full: 999px;
+  --rill-border-w: 1px; --rill-shadow-1: 0 1px 2px rgba(16,16,22,.06); --rill-shadow-2: 0 6px 20px rgba(16,16,22,.10); --rill-shadow-3: 0 16px 40px rgba(16,16,22,.16);
+  --rill-gutter: 16px; --rill-header-h: 52px; --rill-tabbar-h: 56px; --rill-hit: 44px;
+  --rill-card-pad-y: 10px; --rill-card-pad-x: 10px; --rill-media-gap: 2px; --rill-line-clamp: 6;
+  --rill-textarea-min: 168px; --rill-compose-bar-h: 60px; --rill-avatar: 40px; --rill-avatar-sm: 24px;
+  --rill-col-gap: 10px;   /* 新增：双列槽宽 */
+}
+
+.stage { display: flex; flex-wrap: wrap; gap: 28px 24px; align-items: flex-start; justify-content: center; padding: 28px 20px 48px; }
+.frame { margin: 0; }
+.frame .cap { font-size: 12px; color: #4A4A52; padding: 0 2px 8px; display: flex; gap: 8px; align-items: baseline; }
+.frame .cap b { font-size: 13px; color: var(--rill-text); }
+.dev { width: 375px; height: 812px; border-radius: 26px; overflow: hidden; background: #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 18px 44px rgba(0,0,0,.14); }
+html.only body { background: var(--rill-bg); }
+html.only .stage { display: block; padding: 0; }
+html.only .frame { display: none; }
+html.only .frame.is-on { display: block; }
+html.only .frame .cap { display: none; }
+html.only .dev { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+
+.screen { container-type: inline-size; width: 100%; height: 100%; position: relative; background: var(--rill-bg); color: var(--rill-text); overflow: hidden; }
+.app { height: 100%; display: flex; flex-direction: column; }
+.app > * { flex: 0 0 auto; }
+
+/* 顶栏：搜索胶囊 + 分段 */
+.top { padding: 10px var(--rill-gutter) 0; }
+.search { height: 38px; border-radius: var(--rill-radius-full); background: var(--rill-surface); display: flex; align-items: center; gap: 8px; padding: 0 14px; box-shadow: var(--rill-shadow-1); }
+.search svg { width: 18px; height: 18px; color: var(--rill-text-3); }
+.search span { font-size: 13px; color: var(--rill-text-3); }
+.seg { display: flex; gap: 18px; padding: 0 var(--rill-gutter) 2px; }
+.seg a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; font-size: 13px; color: var(--rill-text-2); text-decoration: none; }
+.seg a.is-on { color: var(--rill-text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--rill-accent); }
+.seg { align-items: flex-end; }
+
+/* 双列错落：columns 而不是 grid，卡片自然落位 */
+.app--wall { display: block; position: relative; }
+.app--wall .wall { columns: 2; column-gap: var(--rill-col-gap); padding: 2px var(--rill-gutter) 78px; }
+.app--wall .tabs { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; }
+.app--wall .fab { bottom: 74px; }
+.app--wall::after { content: ""; position: absolute; left: 0; right: 0; bottom: var(--rill-tabbar-h); height: 26px; pointer-events: none; z-index: 2;
+  background: linear-gradient(180deg, rgba(244,244,247,0), var(--rill-bg)); }
+.wall { min-width: 0; }
+.cc { margin: 0; background: var(--rill-surface); border-radius: var(--rill-radius-12); overflow: hidden; box-shadow: var(--rill-shadow-1); }
+.cc__cover { position: relative; overflow: hidden;
+  background: radial-gradient(120% 120% at 26% 16%, hsl(var(--h) 42% 90%) 0%, hsl(var(--h) 32% 77%) 46%, hsl(var(--h) 26% 63%) 100%), hsl(var(--h) 28% 76%); }
+.cc__cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.06)); }
+.cc[data-r="square"] .cc__cover { height: 0; padding-top: 100%; }
+.cc[data-r="tall"] .cc__cover { height: 0; padding-top: 133.3%; }
+.cc[data-r="wide"] .cc__cover { height: 0; padding-top: 62.5%; }
+.cc[data-r="none"] .cc__cover { display: none; }
+/* 多图卡：不在缩略图上盖 +N —— 9 图横跨两列画成 3×3，4 图画 2×2，3 图画一行 */
+.cc__figs { display: grid; gap: 2px; padding: 2px; }
+.cc__figs[data-n="9"] { grid-template-columns: repeat(3, 1fr); }
+.cc__figs[data-n="4"] { grid-template-columns: 1fr 1fr; }
+.cc__figs[data-n="3"] { grid-template-columns: repeat(3, 1fr); }
+.cc__figs .ph { aspect-ratio: 1 / 1; }
+.cc[data-n="9"] { column-span: all; }
+/* 转发卡：理由 + 原博（引用块），不是两张看起来重复的卡 */
+.cc__quote { margin: 0 10px 8px; padding: 8px 0 8px 10px; border-left: 2px solid var(--rill-border-strong); }
+.cc__quote .q-h { display: flex; gap: 6px; align-items: baseline; font-size: 13px; font-weight: 600; color: var(--rill-text); }
+.cc__quote .q-h em { font-style: normal; font-size: 12px; font-weight: 400; color: var(--rill-text-3); }
+.cc__quote p { margin: 4px 0 0; font-size: 14px; line-height: 1.6; color: var(--rill-text-2); -webkit-line-clamp: 3; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.cc__n { position: absolute; right: 6px; bottom: 6px; z-index: 1; font-size: 12px; color: #fff; background: rgba(10,12,14,.62); padding: 1px 6px; border-radius: var(--rill-radius-4); }
+.cc__tag { position: absolute; left: 6px; top: 6px; z-index: 1; font-size: 12px; color: #fff; background: rgba(188,26,44,.94); padding: 1px 7px; border-radius: var(--rill-radius-4); }
+.cc__body { padding: 9px 10px 10px; }
+.cc__title { margin: 0; font-size: 16px; line-height: 1.45; font-weight: 500;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cc[data-r="none"] .cc__title { font-size: 16px; line-height: var(--rill-lh-normal); -webkit-line-clamp: 4; }
+.cc__meta { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.cc__av { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; color: #16161A;
+  background: radial-gradient(120% 120% at 30% 20%, hsl(var(--h) 60% 88%), hsl(var(--h) 45% 70%)); }
+.cc__nm { font-size: 12px; color: var(--rill-text-2); }
+.cc__like { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--rill-text-2); font-variant-numeric: tabular-nums; }
+.cc__like svg { width: 14px; height: 14px; }
+.cc__like.is-on { color: var(--rill-accent); }
+.cc__like.is-on svg { fill: currentColor; }
+
+/* 中央发布按钮 + tabbar */
+.fab { position: absolute; right: 14px; bottom: calc(var(--rill-tabbar-h) + 10px); width: 44px; height: 44px; border-radius: 50%; background: var(--rill-accent); color: var(--rill-on-accent); display: grid; place-items: center; box-shadow: 0 0 0 5px var(--rill-bg), var(--rill-shadow-2); z-index: 2; }
+.fab svg { width: 24px; height: 24px; }
+.tabs { height: var(--rill-tabbar-h); display: grid; grid-template-columns: repeat(4, 1fr); background: var(--rill-surface); border-top: 1px solid var(--rill-border); }
+.tabs a { display: grid; place-items: center; color: var(--rill-text-3); }
+.tabs a svg { width: 24px; height: 24px; }
+.tabs a.is-on { color: var(--rill-accent); }
+
+/* 详情：一张卡摊平 */
+.dtop { height: var(--rill-header-h); display: flex; align-items: center; gap: 12px; padding: 0 var(--rill-gutter); background: var(--rill-surface); border-bottom: 1px solid var(--rill-border); }
+.dtop a { color: var(--rill-text-2); display: grid; place-items: center; min-width: 44px; min-height: 44px; }
+.dtop a svg { width: 22px; height: 22px; }
+.dtop h1 { margin: 0; font-size: 15px; font-weight: 600; }
+.dsheet { flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 12px var(--rill-gutter) 0; }
+.dcard { background: var(--rill-surface); border-radius: var(--rill-radius-12); padding: 12px; box-shadow: var(--rill-shadow-1); }
+.dhead { display: grid; grid-template-columns: var(--rill-avatar) 1fr auto; gap: 10px; align-items: center; }
+.dav { width: var(--rill-avatar); height: var(--rill-avatar); border-radius: 50%; display: grid; place-items: center; font-size: 15px; font-weight: 600; color: #16161A;
+  background: radial-gradient(120% 120% at 30% 20%, hsl(var(--h) 60% 88%), hsl(var(--h) 45% 70%)); }
+.dhead b { font-size: 16px; font-weight: 600; display: block; }
+.dhead em { font-style: normal; font-size: 12px; color: var(--rill-text-3); }
+.dhead .tm { font-size: 12px; color: var(--rill-text-3); }
+.dbody { margin: 10px 0 0; font-size: var(--rill-fs-15); line-height: var(--rill-lh-normal);
+  display: -webkit-box; -webkit-line-clamp: var(--rill-line-clamp); -webkit-box-orient: vertical; overflow: hidden; }
+.figs { display: grid; gap: var(--rill-media-gap); margin-top: 10px; border-radius: var(--rill-radius-8); overflow: hidden; }
+.figs[data-n="4"] { grid-template-columns: repeat(4, 1fr); }
+.figs[data-n="4"] .ph { aspect-ratio: 1 / 1; }
+@container (min-width: 900px) { .figs[data-n="4"] { grid-template-columns: repeat(4, 1fr); } }
+.ph { position: relative; overflow: hidden;
+  background: radial-gradient(120% 120% at 26% 16%, hsl(var(--h) 42% 90%) 0%, hsl(var(--h) 32% 77%) 46%, hsl(var(--h) 26% 63%) 100%), hsl(var(--h) 28% 76%); }
+.ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.06)); }
+.ph i { position: absolute; left: 6px; bottom: 6px; z-index: 1; font-style: normal; font-size: 12px; color: #fff; background: rgba(10,12,14,.62); padding: 1px 6px; border-radius: var(--rill-radius-4); }
+.topicchip { display: inline-block; margin-top: 10px; font-size: 12px; color: #A8142A; background: var(--rill-accent-soft); padding: 3px 9px; border-radius: var(--rill-radius-full); }
+.counts { display: flex; gap: 20px; padding: 12px 0 2px; margin-top: 10px; border-top: 1px solid var(--rill-border); }
+.counts button { all: unset; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--rill-text-2); font-variant-numeric: tabular-nums; }
+.counts svg { width: 18px; height: 18px; }
+.counts .is-on { color: var(--rill-accent); }
+.counts .is-on svg { fill: currentColor; }
+.dcmts { margin-top: 12px; padding-bottom: 8px; }
+.dcmts__h { font-size: 12px; color: var(--rill-text-3); padding: 0 2px 6px; }
+.cmt { display: grid; grid-template-columns: var(--rill-avatar-sm) 1fr; gap: 9px; padding: 9px 0; border-bottom: 1px solid var(--rill-border); }
+.cmt .av { width: var(--rill-avatar-sm); height: var(--rill-avatar-sm); border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; color: #16161A;
+  background: radial-gradient(120% 120% at 30% 20%, hsl(var(--h) 60% 88%), hsl(var(--h) 45% 70%)); }
+.cmt b { font-size: 13px; font-weight: 600; }
+.cmt span { font-size: 12px; color: var(--rill-text-3); margin-left: 6px; }
+.cmt p { margin: 3px 0 0; font-size: var(--rill-fs-15); line-height: var(--rill-lh-normal); }
+.cbar { height: var(--rill-compose-bar-h); display: flex; align-items: center; gap: 10px; padding: 0 var(--rill-gutter); background: var(--rill-surface); border-top: 1px solid var(--rill-border); }
+.cbar .pill { flex: 1; height: 38px; border-radius: var(--rill-radius-full); background: var(--rill-surface-2); color: var(--rill-text-3); font-size: 13px; display: flex; align-items: center; padding: 0 14px; }
+
+/* 发博 */
+.chd { height: var(--rill-header-h); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--rill-gutter); background: var(--rill-surface); border-bottom: 1px solid var(--rill-border); }
+.chd b { font-size: 15px; font-weight: 600; }
+.chd a { font-size: 13px; color: var(--rill-text-2); text-decoration: none; }
+.csheet { flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 12px var(--rill-gutter) 0; }
+.card { background: var(--rill-surface); border-radius: var(--rill-radius-12); box-shadow: var(--rill-shadow-1); padding: 12px; }
+.ta { min-height: var(--rill-textarea-min); }
+.ta p { margin: 0; font-size: var(--rill-fs-15); line-height: 1.6; }
+.ta p.ph1 { color: #6A6A76; }
+.ta p.draft { color: var(--rill-text); }
+.caret { display: inline-block; width: 1px; height: 18px; background: var(--rill-accent); vertical-align: -3px; margin-left: 1px; }
+.pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 10px; }
+.pick div { aspect-ratio: 1 / 1; border-radius: var(--rill-radius-8); position: relative; overflow: hidden; background: var(--rill-surface-2); display: grid; place-items: center; }
+.pick div svg { width: 22px; height: 22px; color: #8A8A96; }
+.pick .filled { background: transparent; }
+.pick .filled .ph { position: absolute; inset: 0; }
+.pick .filled .ph i { display: none; }
+.pick .filled .x { position: absolute; right: 4px; top: 4px; z-index: 2; width: 18px; height: 18px; border-radius: 50%; background: rgba(10,12,14,.62); display: grid; place-items: center; }
+.pick .filled .x svg { width: 12px; height: 12px; color: #fff; }
+.topic { display: flex; align-items: center; gap: 8px; padding: 12px 2px 0; }
+.topic span { font-size: 12px; color: var(--rill-text-3); }
+.topic b { font-size: 12px; color: #A8142A; background: var(--rill-accent-soft); padding: 3px 9px; border-radius: var(--rill-radius-full); font-weight: 400; }
+.cbar2 { height: var(--rill-compose-bar-h); display: flex; align-items: center; gap: 12px; padding: 0 var(--rill-gutter); background: var(--rill-surface); border-top: 1px solid var(--rill-border); }
+.cbar2 .n { font-size: 12px; color: var(--rill-text-3); font-variant-numeric: tabular-nums; }
+.cbar2 .pub { margin-left: auto; font-size: 14px; font-weight: 600; color: var(--rill-on-accent); background: var(--rill-accent); padding: 9px 22px; min-height: 44px; border-radius: var(--rill-radius-full); }
+
+/* ============================ 1440 ============================ */
+@container (min-width: 900px) {
+  .app:not(.app--wall) { display: grid; grid-template-rows: auto 1fr auto; padding: 0 32px; }
+  .app--wall { padding: 0 32px; }
+  .top { display: flex; align-items: center; gap: 24px; padding: 18px 0 12px; border-bottom: 1px solid var(--rill-border); }
+  .search { width: 320px; }
+  .seg { padding: 0; gap: 24px; }
+  .app--wall .wall { columns: 4; column-gap: 16px; padding: 14px 0 84px; }
+  .app--wall .seg { padding: 10px 0 0; }
+  .cc:nth-child(2n) { margin-top: 0; }
+  .app--wall .tabs { grid-template-columns: repeat(4, max-content); gap: 28px; justify-content: start; padding: 0 32px; height: 56px; }
+  .tabs a { grid-auto-flow: column; gap: 8px; }
+  .tabs a svg { width: 20px; height: 20px; }
+  .tabs a::after { content: none; }   /* 桌面端只用图标，不重复移动端的文字标签 */
+  .fab { right: 32px; bottom: 76px; }
+  /* 详情：左卡 + 右回复 */
+  .dtop { grid-row: 1; margin: 0 -32px; padding: 0 32px; }
+  .dsheet { grid-row: 2; display: grid; grid-template-columns: minmax(0, 640px) 320px; gap: 28px; align-content: start; padding: 18px 0 0; }
+  .dcard { padding: 16px; }
+  .dcard .figs[data-n="4"] { grid-template-columns: repeat(4, 1fr); }
+  .dcard .figs[data-n="4"] .ph { aspect-ratio: 1 / 1; }
+@container (min-width: 900px) { .figs[data-n="4"] { grid-template-columns: repeat(4, 1fr); } }
+  .dcmts { margin-top: 0; background: var(--rill-surface); border-radius: var(--rill-radius-12); padding: 14px; box-shadow: var(--rill-shadow-1); }
+  .cbar { grid-row: 3; margin: 0 -32px; padding: 0 32px; }
+  /* 发博：中间卡 + 右侧提示 */
+  .chd { grid-row: 1; margin: 0 -32px; padding: 0 32px; }
+  .csheet { grid-row: 2; display: grid; grid-template-columns: minmax(0, 640px) 260px; gap: 28px; align-content: start; padding: 18px 0 0; }
+  .cbar2 { grid-row: 3; margin: 0 -32px; padding: 0 32px; }
+}
+
+/* ===== 暗色（?theme=dark）===== */
+html[data-theme="dark"] {
+  --rill-bg:#101014; --rill-surface:#17171C; --rill-surface-2:#1E1E24; --rill-surface-3:#26262E;
+  --rill-border:#2C2C36; --rill-border-strong:#7A7A88;
+  --rill-text:#ECECF0; --rill-text-2:#A9A9B4; --rill-text-3:#86868F;
+  --rill-accent:#FF5C6B; --rill-accent-pressed:#FF8490; --rill-accent-soft:#2A1216; --rill-on-accent:#12121A;
+  --rill-like:#FF5C6B; --rill-danger:#FF8A6B; --rill-overlay:rgba(0,0,0,.62);
+  --rill-toast-bg:#ECECF0; --rill-toast-text:#101014; --rill-focus:#FF5C6B;
+  --rill-shadow-1:0 1px 2px rgba(0,0,0,.45); --rill-shadow-2:0 6px 20px rgba(0,0,0,.55);
+}
+html[data-theme="dark"] .app--wall::after { background: linear-gradient(180deg, rgba(16,16,20,0), var(--rill-bg)); }
+html[data-theme="dark"] .cc__tag { background: rgba(255,92,107,.92); color: #12121A; }
+
+</style>
+</head>
+<body>
+<div class="stage">
+
+<!-- ============================ 1 · 时间线 ============================ -->
+<figure class="frame" data-screen="timeline">
+  <div class="cap"><b>C · 格子</b><span>时间线 · 375</span></div>
+  <div class="dev">
+    <div class="screen">
+      <div class="app app--wall">
+        <div class="top">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.4"/><path d="m16 16 4 4"/></svg>
+            <span>搜一搜「雨后散步」</span>
+          </div>
+        </div>
+        <div class="seg"><a href="#" class="is-on">关注</a><a href="#">推荐</a><a href="#">附近</a><a href="#">话题</a></div>
+        <div class="wall">
+          <article class="cc" data-card data-r="none" data-n="9">
+            <div class="cc__figs" data-n="9" data-part="media"><div class="ph" style="--h:57"></div><div class="ph" style="--h:110"></div><div class="ph" style="--h:163"></div><div class="ph" style="--h:94"></div><div class="ph" style="--h:147"></div><div class="ph" style="--h:200"></div><div class="ph" style="--h:253"></div><div class="ph" style="--h:268"></div><div class="ph" style="--h:316"></div></div>
+            <div class="cc__body">
+              <p class="cc__title" data-part="body">雨停之后又绕了一段路，路面的水洼把整条街的灯都翻了一遍。</p>
+              <div class="cc__meta" data-part="author">
+                <span class="cc__av" style="--h:168">林</span><span class="cc__nm">林见</span>
+                <span class="cc__like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>42</span>
+              </div>
+            </div>
+          </article>
+          <article class="cc" data-card data-r="tall">
+            <div class="cc__cover" style="--h:147" data-part="media"><span class="cc__tag">#雨后散步#</span></div>
+            <div class="cc__body">
+              <p class="cc__title" data-part="body">把书翻到上次折角的地方，窗外刚好开始下雨，就没再抬头。</p>
+              <div class="cc__meta" data-part="author">
+                <span class="cc__av" style="--h:268">摄</span><span class="cc__nm">摄影笔记</span>
+                <span class="cc__like is-on"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>79</span>
+              </div>
+            </div>
+          </article>
+          <article class="cc" data-card data-r="none">
+            <div class="cc__body">
+              <p class="cc__title" data-part="body">看到就转了，值得留一份。</p>
+              <div class="cc__quote" data-part="media"><div class="q-h">江余<em>jiangyu</em></div><p>地铁上有人让了座，很普通的一件事，让整节车厢都柔和了一点。</p></div>
+              <div class="cc__meta" data-part="author">
+                <span class="cc__av" style="--h:96">城</span><span class="cc__nm">城市漫游</span>
+                <span class="cc__like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>126</span>
+              </div>
+            </div>
+          </article>
+          <article class="cc" data-card data-r="square">
+            <div class="cc__figs" data-n="4" data-part="media"><div class="ph" style="--h:268"></div><div class="ph" style="--h:330"></div><div class="ph" style="--h:205"></div><div class="ph" style="--h:316"></div></div>
+            <div class="cc__body">
+              <p class="cc__title" data-part="body">今天的晚霞只持续了十分钟，正好被我赶上。</p>
+              <div class="cc__meta" data-part="author">
+                <span class="cc__av" style="--h:330">深</span><span class="cc__nm">深夜电台</span>
+                <span class="cc__like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>173</span>
+              </div>
+            </div>
+          </article>
+          <article class="cc" data-card data-r="wide">
+            <div class="cc__cover" style="--h:316" data-part="media"></div>
+            <div class="cc__body">
+              <p class="cc__title" data-part="body">刚做完一顿简单的饭，番茄鸡蛋面，不好看但很好吃。</p>
+              <div class="cc__meta" data-part="author">
+                <span class="cc__av" style="--h:168">林</span><span class="cc__nm">林见</span>
+                <span class="cc__like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>121</span>
+              </div>
+            </div>
+          </article>
+          <article class="cc" data-card data-r="tall">
+            <div class="cc__figs" data-n="3" data-part="media"><div class="ph" style="--h:205"></div><div class="ph" style="--h:147"></div><div class="ph" style="--h:268"></div></div>
+            <div class="cc__body">
+              <p class="cc__title" data-part="body">换了新的水杯，泡了最普通的茶，一天里居然多出一点仪式感。</p>
+              <div class="cc__meta" data-part="author">
+                <span class="cc__av" style="--h:268">摄</span><span class="cc__nm">摄影笔记</span>
+                <span class="cc__like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>10</span>
+              </div>
+            </div>
+          </article>
+        </div>
+        <div class="fab" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5.5v13"/><path d="M5.5 12h13"/></svg></div>
+        <nav class="tabs">
+          <a href="#" class="is-on" data-label="时间线"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h11"/><path d="M4 17h7"/></svg></a>
+          <a href="#" data-label="发博"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5h3.2L9 6h6l1.8 2.5H20a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.4"/></svg></a>
+          <a href="#" data-label="我的"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c0-3.4 3.1-5.6 7-5.6s7 2.2 7 5.6"/></svg></a>
+          <a href="#" data-label="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10"/><path d="M7 12h10"/><path d="M7 17h10"/><circle cx="10" cy="7" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="11" cy="17" r="1.6"/></svg></a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</figure>
+
+<!-- ============================ 2 · 详情 ============================ -->
+<figure class="frame" data-screen="detail">
+  <div class="cap"><b>C · 格子</b><span>详情 · 375</span></div>
+  <div class="dev">
+    <div class="screen">
+      <div class="app">
+        <div class="dtop">
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></a>
+          <h1>详情</h1>
+        </div>
+        <div class="dsheet">
+          <div class="dcard">
+            <div class="dhead" data-part="author">
+              <span class="dav" style="--h:168">林</span>
+              <div><b>林见</b><em>linjian</em></div>
+              <span class="tm">10:59</span>
+            </div>
+            <p class="dbody" data-part="body">雨停之后又绕了一段路，路面的水洼把整条街的灯都翻了一遍。</p>
+            <div class="figs" data-part="media" data-n="9">
+              <div class="ph" style="--h:57"></div><div class="ph" style="--h:110"></div><div class="ph" style="--h:163"></div>
+              <div class="ph" style="--h:94"></div><div class="ph" style="--h:147"></div><div class="ph" style="--h:200"></div>
+              <div class="ph" style="--h:253"></div><div class="ph" style="--h:268"></div><div class="ph" style="--h:316"></div>
+            </div>
+            <div class="counts" data-part="counts">
+              <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 8.5h10.6"/><path d="M14.2 5.4l3.2 3.1-3.2 3.1"/><path d="M17.5 15.5H6.9"/><path d="M9.8 12.4 6.6 15.5l3.2 3.1"/></svg>13</button>
+              <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.3c0 3.6-3.6 6.4-8 6.4-1 0-2-.2-2.9-.5L5 20l1.1-3.4A6.3 6.3 0 0 1 4 12.3C4 8.7 7.6 6 12 6s8 2.7 8 6.3z"/></svg>1</button>
+              <button class="is-on"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 19.4S4.6 14.9 4.6 9.9A4 4 0 0 1 12 7.5a4 4 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5z"/></svg>42</button>
+            </div>
+          </div>
+          <div class="dcmts">
+            <div class="dcmts__h">回复 · 3 条</div>
+            <div class="cmt"><span class="av" style="--h:96">阿</span><div><b>阿野</b><span>10:02</span><p>我也有同感。</p></div></div>
+            <div class="cmt"><span class="av" style="--h:48">木</span><div><b>木南</b><span>10:05</span><p>下次一起去。</p></div></div>
+            <div class="cmt"><span class="av" style="--h:210">苏</span><div><b>苏未</b><span>10:11</span><p>我也有同感。</p></div></div>
+          </div>
+        </div>
+        <div class="cbar"><span class="pill">说点什么</span></div>
+      </div>
+    </div>
+  </div>
+</figure>
+
+<!-- ============================ 3 · 发博 ============================ -->
+<figure class="frame" data-screen="compose">
+  <div class="cap"><b>C · 格子</b><span>发博 · 375</span></div>
+  <div class="dev">
+    <div class="screen">
+      <div class="app">
+        <div class="chd"><a href="#">取消</a><b>发博</b><a href="#">草稿</a></div>
+        <div class="csheet">
+          <div class="card">
+            <div class="ta">
+              <p class="draft"><b style="font-weight:400">雨停之后又绕了一段路</b><span class="caret"></span></p>
+              <p class="ph1" style="margin-top:6px">再写点什么…</p>
+            </div>
+            <div class="pick">
+              <div class="filled"><div class="ph" style="--h:57"></div><span class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></span></div>
+              <div class="filled"><div class="ph" style="--h:110"></div><span class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></span></div>
+              <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12"/><path d="M6 12h12"/></svg></div>
+            </div>
+            <div class="topic"><span>话题</span><b>#雨后散步#</b><span>#城市散步#</span></div>
+          </div>
+        </div>
+        <div class="cbar2"><span class="n">11 / 2000 · 2 张图</span><button class="pub">发布</button></div>
+      </div>
+    </div>
+  </div>
+</figure>
+
+</div>
+<script>
+  const qs = new URLSearchParams(location.search);
+  const theme = qs.get('theme');            // ?theme=dark|light —— 主题截图用
+  if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+  const only = qs.get('only');
+  if (only) {
+    document.documentElement.classList.add('only');
+    const f = document.querySelector(`.frame[data-screen="${only}"]`);
+    if (f) f.classList.add('is-on');
+  }
+</script>
+</body>
+</html>

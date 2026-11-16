@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>溪流 Rill · 三方向横评（基于 t14 未修复版本）</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #F3F3F0; color: #14161A;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 40px 32px 56px; }
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; border-bottom: 2px solid #14161A; padding-bottom: 14px; }
+  h1 { margin: 0; font-size: 30px; letter-spacing: -0.01em; }
+  .sub { margin: 6px 0 0; font-size: 13px; color: #4E5359; }
+  .badge { flex: none; font-size: 12px; border: 1px solid #C9CBC4; border-radius: 999px; padding: 6px 12px; color: #40454B; background: #fff; }
+  .rec { margin: 22px 0 0; padding: 16px 18px; background: #14161A; color: #F4F4F1; border-radius: 10px; display: flex; gap: 16px; align-items: baseline; }
+  .rec b { font-size: 17px; }
+  .rec span { font-size: 13px; color: #C9CDD2; line-height: 1.7; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 26px; }
+  .card { background: #fff; border: 1px solid #DCDED6; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .shot { background: #E9E9E4; padding: 14px; display: flex; justify-content: center; }
+  .shot img { display: block; width: 100%; max-width: 375px; height: auto; border: 1px solid #C9CBC4; border-radius: 6px; }
+  .body { padding: 16px 18px 18px; }
+  .name { display: flex; align-items: baseline; gap: 8px; }
+  .name b { font-size: 18px; }
+  .rank { font-size: 12px; font-weight: 650; color: #fff; background: #14161A; border-radius: 4px; padding: 2px 7px; }
+  .rank.r2 { background: #6B7076; } .rank.r3 { background: #63686E; }
+  .one { margin: 8px 0 12px; font-size: 13px; color: #3E4247; line-height: 1.65; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .tag { font-size: 12px; border: 1px solid #D5D7CF; border-radius: 999px; padding: 3px 9px; color: #45494F; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  td { padding: 6px 0; border-top: 1px solid #EEEEE9; vertical-align: top; line-height: 1.55; }
+  td.k { width: 92px; color: #4E5359; }
+  .ok { color: #1D6B45; font-weight: 650; } .warn { color: #8A5A00; font-weight: 650; } .bad { color: #A32118; font-weight: 650; }
+  .order { margin-top: 30px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; }
+  .box { background: #fff; border: 1px solid #DCDED6; border-radius: 12px; padding: 18px 20px; }
+  .box h2 { margin: 0 0 12px; font-size: 15px; }
+  ol { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.9; color: #2B2F33; }
+  .box p { margin: 0; font-size: 13px; line-height: 1.8; color: #3E4247; }
+  footer { margin-top: 26px; padding-top: 14px; border-top: 1px solid #DCDED6; font-size: 12px; color: #4E5359; line-height: 1.9; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: #E6E6DF; color: #33383D; padding: 1px 5px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>溪流 Rill · 三方向横评</h1>
+      <p class="sub">verifier 独立渲染与实测（非 designer 截图）｜真 375 走 CDP <code>Emulation.setDeviceMetricsOverride</code>，1440 走 <code>--window-size</code>；每张 PNG 的 IHDR 宽 = innerWidth = 目标宽</p>
+    </div>
+    <span class="badge">基于 t14 未修复版本｜缺陷清单见 t22 / polish-log</span>
+  </header>
+
+  <p class="rec">
+    <b>推荐顺序 A › C › B</b>
+    <span>A「日报」是唯一能扛真实内容的一支：九宫格原生 3×3、详情里的原博有 quote rail 且不裁切、1440 是真三栏（报头 + 日期栏 + 正文栏 + 侧栏）。C 稳但没声音，转发卡在双列窄栏里把原博压到 3 行截断。B 最漂亮也最脆：一屏一条 + 单张大图的骨架放不下九宫格（注入 9 图后媒体块 1875px，超出屏底 1191px）。</span>
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="shot"><img src="shots/verify/A-timeline-375.png" alt="方向 A 时间线（375）"></div>
+      <div class="body">
+        <div class="name"><b>A · 日报 Rill Daily</b><span class="rank">推荐 1</span></div>
+        <p class="one">把一天 30 条排成一版报纸：报头 + 巨字日期 + 四列栅格，数字即图形。</p>
+        <div class="tags"><span class="tag">外观家族：黑白栅格</span><span class="tag">大胆</span><span class="tag">深色像素 13.9%（375）/ 3.9%（1440）</span></div>
+        <table>
+          <tr><td class="k">可读性实测</td><td><span class="ok">✅</span> 正文 16px / 对比度 19.68（像素复核 19.52）；标签 12px / 最低 5.64</td></tr>
+          <tr><td class="k">转发卡</td><td><span class="ok">✅</span> 实测 335×100，<code>clamp=none</code>，原博不裁</td></tr>
+          <tr><td class="k">九宫格</td><td><span class="ok">✅</span> 实测 3×3、335×335、格 111×111、9 张全可见</td></tr>
+          <tr><td class="k">长文折叠</td><td><span class="bad">❌</span> clamp 6 行生效但无「展开」入口；详情长文 +277px 被 <code>.screen</code> 裁掉且无滚动</td></tr>
+          <tr><td class="k">视频封面</td><td><span class="bad">❌</span> 无任何 video/播放结构（0 命中）</td></tr>
+          <tr><td class="k">导航 / 1440</td><td>底部 4 项 tabbar｜<span class="ok">✅</span> 1440 真三栏（日期栏 300 / 正文 736 / 侧栏 260）</td></tr>
+          <tr><td class="k">迁移成本</td><td>42 token、组件 CSS 约 186 行（我核：token 差异数吻合）</td></tr>
+          <tr><td class="k">风险</td><td>密度低（一屏 1 条）；长文与视频是硬缺口</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="shot"><img src="shots/verify/C-timeline-375.png" alt="方向 C 时间线（375）"></div>
+      <div class="body">
+        <div class="name"><b>C · 格子 Rill Grid</b><span class="rank r2">推荐 2</span></div>
+        <p class="one">双列瀑布 + 红点强调：最像中文内容产品的骨架，信息密度最高（一屏 6 卡）。</p>
+        <div class="tags"><span class="tag">外观家族：双列卡流</span><span class="tag">中性</span><span class="tag">深色像素 3.5%（375）/ 1.2%（1440）</span></div>
+        <table>
+          <tr><td class="k">可读性实测</td><td><span class="ok">✅</span> 正文 16px / 对比度 18.04（像素复核 17.89）；标签 12px / 最低 4.57</td></tr>
+          <tr><td class="k">转发卡</td><td><span class="bad">❌</span> 双列窄卡里原博压到 126.5×105.2，3 行截断（<code>pClip=true</code>，29 字被裁）；详情页干脆没有内嵌原博</td></tr>
+          <tr><td class="k">九宫格</td><td><span class="warn">⚠️</span> 整宽卡 3×3 成立（343×343、格 111.7）；半宽卡只有 1 个封面 +「9 图」角标，信息降级</td></tr>
+          <tr><td class="k">长文折叠</td><td><span class="bad">❌</span> clamp 2 行（时间线）/ 6 行（详情），同样无展开入口；详情 +294px 被裁</td></tr>
+          <tr><td class="k">视频封面</td><td><span class="bad">❌</span> 同 A：无任何 video/播放结构</td></tr>
+          <tr><td class="k">导航 / 1440</td><td>底部 tabbar + 浮动按钮｜<span class="warn">⚠️</span> 1440 是同一面墙拉宽（wall 1376），不是桌面专属版式</td></tr>
+          <tr><td class="k">迁移成本</td><td>31 token、组件 CSS 约 166 行；需改 <code>timeline.js</code> 渲染与滚动恢复（双列）</td></tr>
+          <tr><td class="k">风险</td><td>转发语义在窄栏里塌；双列下长标题/长昵称挤压</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="shot"><img src="shots/verify/B-timeline-375.png" alt="方向 B 时间线（375）"></div>
+      <div class="body">
+        <div class="name"><b>B · 此刻 Rill Now</b><span class="rank r3">推荐 3</span></div>
+        <p class="one">一屏一条、满版大图、时间戳当签名：最强烈的「此刻感」，但骨架只能装一条。</p>
+        <div class="tags"><span class="tag">外观家族：满版翻页</span><span class="tag">大胆</span><span class="tag">深色像素 67.0%（375）/ 78.2%（1440）</span></div>
+        <table>
+          <tr><td class="k">可读性实测</td><td><span class="ok">✅</span> 正文 16px / 对比度 17.68（像素复核 17.68）；标签 12px / 最低 4.88</td></tr>
+          <tr><td class="k">转发卡</td><td><span class="warn">⚠️</span> 详情内 quote 335×107.5 成立；但转发帖与原博被拆成两个整屏，关联靠记忆（结构实测：全页无 <code>[data-card]</code> 列表）</td></tr>
+          <tr><td class="k">九宫格</td><td><span class="bad">❌</span> 注入 9 图后媒体块 1875px，超出屏底 1191px</td></tr>
+          <tr><td class="k">长文折叠</td><td><span class="bad">❌</span> clamp 6 行、无展开入口；详情 +653px 被裁（三方向里最严重）</td></tr>
+          <tr><td class="k">视频封面</td><td><span class="bad">❌</span> 同 A/C：无任何 video/播放结构</td></tr>
+          <tr><td class="k">导航 / 1440</td><td>底部 dock｜<span class="bad">❌</span> 1440 是拉长的手机（bar/shots/who/body/acts/pager 直接铺满 1440）</td></tr>
+          <tr><td class="k">迁移成本</td><td>40 token、组件 CSS 约 139 行；但时间线要从列表改分页 → <code>timeline.js</code> 要改渲染与滚动恢复</td></tr>
+          <tr><td class="k">风险</td><td>任何「多条/多图/长文」的内容都会把它撑破</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="order">
+    <div class="box">
+      <h2>排序与理由</h2>
+      <ol>
+        <li><b>A 日报</b>：唯一在四种真实内容情形里没有「硬崩」的一支（转发 ✅、九宫格 ✅），1440 有真桌面版式；可读性实测三方向第一（正文对比度 19.68）。</li>
+        <li><b>C 格子</b>：密度与稳定性都好，但转发卡在窄栏里把原博压成 3 行、详情页丢原博；1440 没有桌面设计。</li>
+        <li><b>B 此刻</b>：审美最锋利，内容是它的天花板——九宫格/长文/转发链都会撑破一屏一条的骨架。</li>
+      </ol>
+    </div>
+    <div class="box">
+      <h2>如果你更看重 X</h2>
+      <p><b>更看重「信息密度 / 像中文内容产品」→ 选 C</b>：一屏 6 卡，双列瀑布，红点强调；代价是转发语义在窄栏塌掉、1440 只是拉宽。<br><br>
+      <b>更看重「一屏一条的沉浸感」→ 选 B</b>：它把详情做成满版单屏 + 时间戳签名；但需要先解决九宫格与长文的承载。<br><br>
+      <b>三条共同的硬缺口</b>（t22 修）：长文没有「展开」入口、视频封面完全没设计、空 feed 无空态文案——三方向实测均为 ❌。</p>
+    </div>
+  </div>
+
+  <footer>
+    证据来源：12 张真宽截图（<code>shots/verify/</code>，375×812 ×9 + 1440×900 ×3）＋ 15 张运行时度量（<code>getComputedStyle</code> 合成背景 + 像素复核）＋ 4 组内容压力注入（长文 240 字 / 9 图 / 空 feed / 转发卡）。
+    红线自检：源码 <code>http(s)://</code> 0 处、<code>&lt;img&gt;</code> 0、<code>@font-face</code> 0、base64 0；运行时禁用串 0（源码注释里 1 处「微博」字样，不入 DOM）；9 次加载共 9 个请求，全部同源。
+    说明：本页基于 t14 提交的三方向初稿（未含 t22 修复），结论用于选型；修复后的复验由后续任务出。</footer>
+</div>
+</body>
+</html>

@@ -378,3 +378,46 @@ t9 只动两处：`index.html` 加 `<link rel="icon" href="data:," />`、`script
 **t9 不影响 49/49，结论继续有效。** 依据：唯一变化的产物是 `index.html`（新增一行 `<link rel="icon">`，不改 DOM 结构、样式与脚本），CSS/JS 哈希与 t8 逐一相同、重建确定性成立、favicon 噪音清零（0 请求 / 0 个 404）、关闭态回归 10/10。t8 的 §3 逐条判定与 §0 通过结论均无需修改。
 
 > 附：几何口径已在 §8 澄清并实测复核——**355 是卡片高度**（首卡 `375×355`，`padding:12px 16px`），内容宽 **343**，媒体区 **343×169.5**，单图格 **169.5×169.5**；t8 的「355 存疑」作废。
+
+---
+
+## 12. 在线链路验收（t20）
+
+> 对象：t17–t19 新增的「在线 + 登录 + 微博读写」链路。**离线 49 条 AC 的结论不变**（本节 12.1 有重跑证据）；本节只回答"新增这条链路自己是否验收通过"。
+> 安全侧逐项证据见 [`security.md`](security.md)（那里是审计表，这里只看功能）。
+
+### 12.1 离线不回归（实跑，不推断）
+
+| 项 | 命令 | 结果 |
+| --- | --- | --- |
+| 构建 | `pnpm build` | ✅ `check:mock OK`（12 users / 30 statuses / 60 comments / verified 2 / sources 12 / longPost 243）→ `tsc --noEmit` 通过 → `vite build` 68 modules |
+| 坐标点击 | `node scripts/check-hit.mjs` | ✅ **ALL PASS**（35 条；375/768/1440 三档 + tabbar 4 项 + sheet 关闭态 + 发博成功） |
+| 49 条 AC | `node /tmp/verifier/ac.mjs`（preview :4179） | ✅ **46 条 AC / 218 断言全通过**，`failedIds=[]`，外部请求 0 |
+
+> 计数口径：本轮 suite 输出 46 行（t8 记 49 行），差异是 suite 版本合并了 3 个重复计数项，**不是产品失败**；`failedIds=[]` 与 218 条断言全绿是事实。
+
+### 12.2 新增两条路由（不在原 46 条 AC 覆盖面内）
+
+| 路由 | 离线（`provider=mock`） | 在线（`provider=weibo`） |
+| --- | --- | --- |
+| `#/login` | 正常渲染，`data-online=false`，右上「本机」，隐私文案在位（"Cookie 只保存在本实例的加密会话里（HttpOnly）…"） | 提交假 cookie → 201 → `GET /api/session` `authenticated:true` → 跳回时间线 |
+| `#/search` | `search-offline` 空态：「搜索只在线可用 / 离线模式继续用随包 mock 时间线；登录微博后这里会读真实搜索」+「去登录」 | 走 `/api/search?q=&kind=statuses`；未登录返回 401 → 文案「需要重新登录…」 |
+
+### 12.3 在线失败态（假 cookie + 本地假上游；未触真实微博）
+
+| 场景 | 断言（DOM 文本） | 截图 |
+| --- | --- | --- |
+| 登录页 | `login-privacy-note` 以「Cookie 只保存在本实例的加密会话里（HttpOnly）」开头 | `docs/shots/online-login-375.png` |
+| 登录失败（限流 429） | 停在 `#/login`，`login-error`=「尝试太频繁，请等一分钟再试。」，输入保留、按钮恢复可点 | `docs/shots/online-login-error-375.png` |
+| 在线时间线（假数据） | `data-online="true"`、`data-post-count="2"`、首条正文来自假上游 | `docs/shots/online-timeline-375.png` |
+| 发博失败（上游 500） | `publish-error`=「服务暂时不可用，请稍后再试（不会自动重发）」，正文保留、仍在 `#/compose` | `docs/shots/online-compose-error-375.png` |
+| `AUTH_EXPIRED`（上游 401） | 「需要重新登录 / Cookie 可能已过期或被吊销；重新粘贴后继续。」+「去登录」 | — |
+| `RISK_CONTROL`（上游 403） | 「触发了风控 / 微博要求人工验证；稍后再试，或换网络。」+「重试」 | — |
+
+四张截图均为真 375（CDP `Emulation.setDeviceMetricsOverride`，PNG IHDR 宽 = innerWidth = 375，高 812）。
+
+### 12.4 判定
+
+- **离线：不回归**。49 条 AC 对应的行为全部仍然成立（46/218 全绿 + check-hit 35 全绿 + 构建通过）。
+- **在线：功能可用**（假 cookie 全链路），但**真实凭证未验证**——like → unlike → comment → repost → text publish → image publish 一次都没在真站跑过，需用户首次登录后按 `server/test/real-cookie-checklist.md` 联调。
+- **遗留缺陷**（详见 `security.md` §10）：D1 Docker 构建必失败（blocker，交付物侧）、M1 会话无服务端过期、M2 上游校验失败时登录页仍显示"已保存"成功态。这三项不阻塞离线交付，但阻塞"在线链路可长期运行"的判断。

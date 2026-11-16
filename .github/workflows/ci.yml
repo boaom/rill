@@ -28,6 +28,8 @@ jobs:
         with:
           version: 11
 
+      # Node 26 是硬要求：server 用 node:sqlite（内置 DatabaseSync），
+      # 22 上没有这个模块，node --test 与 smoke 会直接失败。不要降回 22。
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -46,6 +48,43 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # node:test 零依赖；这一步依赖 Node 26 的 node:sqlite 与内置 test runner。
+      # 只跑 server/test/*.mjs —— real-cookie-checklist.md 是给人看的联调清单，不是测试。
+      - name: Server unit tests (node:test, 依赖 Node 26 的 node:sqlite)
+        run: |
+          set -o pipefail
+          mkdir -p test-results
+          if [ ! -f server/index.mjs ]; then
+            echo "::error title=server/ 未入库::CI 只跑仓库里存在的文件；先把 server/ 提交（或确认 .gitignore 没误伤）"
+            exit 1
+          fi
+          node --test server/test/*.mjs 2>&1 | tee test-results/server-tests.log
+
+      # 「服务起得来」：启动 → 轮询 /api/health → 关掉；失败时把服务日志打出来。
+      - name: Server smoke (start server → /api/health 200 → kill)
+        run: |
+          set -o pipefail
+          mkdir -p test-results
+          export RILL_SECRET="$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))")"
+          export RILL_DB="$RUNNER_TEMP/rill-smoke.sqlite"
+          export RILL_PORT=8787
+          export RILL_HOST=127.0.0.1
+          node server/index.mjs > test-results/server-smoke.log 2>&1 &
+          SERVER_PID=$!
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:8787/api/health" -o test-results/health.json; then ok=1; break; fi
+            sleep 1
+          done
+          kill "$SERVER_PID" 2>/dev/null || true
+          wait "$SERVER_PID" 2>/dev/null || true
+          cat test-results/health.json 2>/dev/null || true
+          if [ "$ok" != "1" ]; then
+            echo "::error title=/api/health 未返回 200::30 秒内没起来，下面是服务日志"
+            cat test-results/server-smoke.log
+            exit 1
+          fi
+
       - name: Hit-test UI (coordinate clicks)
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -62,3 +101,58 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  # 单独成 job：Docker 慢，失败时不该拖住 build/checks 的结论。
+  # 本机没有 docker，所以这一步只能在 runner 上验证 —— 不要在本地"假装构建过"。
+  # 已知风险（2026-11-16 静态核对）：Dockerfile 的 build 阶段没有 COPY server，
+  # 运行时阶段的 `COPY --from=build /app/server ./server` 会以 "not found" 失败 → 本 job 会红。
+  # 修复：build 阶段补一行 `COPY server ./server`（t17 的交付物，不在本次 CI 改动范围内）。
+  docker:
+    name: docker build + container smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: docker version
+        run: docker version
+
+      # --progress=plain 保留每层输出，失败时能看出是哪一层、哪条命令。
+      - name: docker build (看到失败的那一层)
+        run: |
+          set -o pipefail
+          docker build --progress=plain -t rill:ci . 2>&1 | tee docker-build.log
+
+      - name: Container smoke (run → /api/health 200 → logs)
+        run: |
+          set -o pipefail
+          docker run -d --name rill-ci -p 8787:8787 \
+            -e RILL_SECRET="$(openssl rand -base64 32)" rill:ci
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8787/api/health -o container-health.json; then ok=1; break; fi
+            sleep 1
+          done
+          docker logs rill-ci 2>&1 | tail -40
+          if [ "$ok" != "1" ]; then
+            echo "::error title=容器 /api/health 未返回 200::看上面的容器日志"
+            exit 1
+          fi
+          cat container-health.json
+
+      - name: Upload docker logs (失败也上传)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-artifacts
+          path: |
+            docker-build.log
+            container-health.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Cleanup container
+        if: always()
+        run: docker rm -f rill-ci || true

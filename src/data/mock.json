@@ -10,7 +10,8 @@
       "followingCount": 128,
       "followerCount": 964,
       "isCurrentUser": true,
-      "postCount": 3
+      "postCount": 3,
+      "verified": false
     },
     {
       "id": "u_02",
@@ -22,7 +23,8 @@
       "followingCount": 42,
       "followerCount": 3120,
       "isCurrentUser": false,
-      "postCount": 1
+      "postCount": 1,
+      "verified": false
     },
     {
       "id": "u_03",
@@ -34,7 +36,8 @@
       "followingCount": 76,
       "followerCount": 880,
       "isCurrentUser": false,
-      "postCount": 1
+      "postCount": 1,
+      "verified": false
     },
     {
       "id": "u_04",
@@ -46,7 +49,8 @@
       "followingCount": 155,
       "followerCount": 2400,
       "isCurrentUser": false,
-      "postCount": 1
+      "postCount": 1,
+      "verified": false
     },
     {
       "id": "u_05",
@@ -58,7 +62,8 @@
       "followingCount": 63,
       "followerCount": 1520,
       "isCurrentUser": false,
-      "postCount": 1
+      "postCount": 1,
+      "verified": true
     },
     {
       "id": "u_06",
@@ -70,7 +75,8 @@
       "followingCount": 88,
       "followerCount": 645,
       "isCurrentUser": false,
-      "postCount": 1
+      "postCount": 1,
+      "verified": false
     },
     {
       "id": "u_07",
@@ -82,7 +88,8 @@
       "followingCount": 31,
       "followerCount": 1290,
       "isCurrentUser": false,
-      "postCount": 1
+      "postCount": 1,
+      "verified": false
     },
     {
       "id": "u_08",
@@ -94,7 +101,8 @@
       "followingCount": 57,
       "followerCount": 2080,
       "isCurrentUser": false,
-      "postCount": 1
+      "postCount": 1,
+      "verified": false
     },
     {
       "id": "u_09",
@@ -106,7 +114,8 @@
       "followingCount": 24,
       "followerCount": 730,
       "isCurrentUser": false,
-      "postCount": 1
+      "postCount": 1,
+      "verified": false
     },
     {
       "id": "u_10",
@@ -118,7 +127,8 @@
       "followingCount": 210,
       "followerCount": 18400,
       "isCurrentUser": false,
-      "postCount": 6
+      "postCount": 6,
+      "verified": false
     },
     {
       "id": "u_11",
@@ -130,7 +140,8 @@
       "followingCount": 96,
       "followerCount": 25300,
       "isCurrentUser": false,
-      "postCount": 6
+      "postCount": 6,
+      "verified": true
     },
     {
       "id": "u_12",
@@ -142,7 +153,8 @@
       "followingCount": 74,
       "followerCount": 9700,
       "isCurrentUser": false,
-      "postCount": 7
+      "postCount": 7,
+      "verified": false
     }
   ],
   "statuses": [
@@ -167,6 +179,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794801600000,
+      "source": "来自 iPhone 13 mini",
       "counts": {
         "reposts": 0,
         "replies": 2,
@@ -236,6 +249,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794797992081,
+      "source": "来自 iPhone 15 Pro",
       "counts": {
         "reposts": 13,
         "replies": 1,
@@ -277,6 +291,7 @@
       ],
       "repostOfId": null,
       "createdAt": 1794794384162,
+      "source": "来自 iPhone 15 Pro Max",
       "counts": {
         "reposts": 2,
         "replies": 3,
@@ -291,6 +306,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794790776243,
+      "source": "来自 iPhone 15",
       "counts": {
         "reposts": 15,
         "replies": 1,
@@ -312,6 +328,7 @@
       "topics": [],
       "repostOfId": "p_0011",
       "createdAt": 1794787168324,
+      "source": "来自 iPhone 15 Pro",
       "counts": {
         "reposts": 4,
         "replies": 1,
@@ -345,6 +362,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794783560405,
+      "source": "来自 iPhone 15 Pro Max",
       "counts": {
         "reposts": 17,
         "replies": 2,
@@ -354,7 +372,7 @@
     {
       "id": "p_0007",
       "authorId": "u_11",
-      "text": "周末把手机放在抽屉里，读了两章书，发现时间其实没有变快。",
+      "text": "这两年我慢慢发现，记录本身比记录的内容更重要。\n\n一开始只是随手拍，后来变成每天走同一条路都会下意识找角度：树叶的影子、公交车进站的那两秒、便利店门口的灯。\n\n最大的变化是不太着急了。以前总想一次拍到最好的一张，现在更愿意在同一个路口站十分钟，等光慢慢挪过来。\n\n拍得多了才明白，所谓手感其实就是熟悉——熟悉这条街什么时候安静，熟悉哪一段墙在下午会发亮。\n\n如果你也在做类似的练习，欢迎来聊 @citywalk 。往期整理放在 https://t.cn/A6xYz123\n\n#城市散步#",
       "media": [
         {
           "id": "m_p_0007_1",
@@ -411,9 +429,12 @@
           "alt": "旧书页"
         }
       ],
-      "topics": [],
+      "topics": [
+        "城市散步"
+      ],
       "repostOfId": null,
       "createdAt": 1794779952486,
+      "source": "来自 iPhone 15 Pro Max",
       "counts": {
         "reposts": 6,
         "replies": 2,
@@ -480,12 +501,10 @@
           "alt": "咖啡杯"
         }
       ],
-      "topics": [
-        "城市散步",
-        "随手拍"
-      ],
+      "topics": [],
       "repostOfId": null,
       "createdAt": 1794776344567,
+      "source": "来自 iPhone 15",
       "counts": {
         "reposts": 19,
         "replies": 2,
@@ -507,6 +526,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794772736648,
+      "source": "来自 iPhone 15 Pro",
       "counts": {
         "reposts": 8,
         "replies": 2,
@@ -546,6 +566,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794769128729,
+      "source": "来自 iPhone 14 Pro",
       "counts": {
         "reposts": 21,
         "replies": 2,
@@ -615,6 +636,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794765520810,
+      "source": "来自 iPhone 15 Pro Max",
       "counts": {
         "reposts": 10,
         "replies": 1,
@@ -639,6 +661,7 @@
       ],
       "repostOfId": null,
       "createdAt": 1794761912891,
+      "source": "来自 Mac",
       "counts": {
         "reposts": 23,
         "replies": 2,
@@ -708,6 +731,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794758304972,
+      "source": "来自 Mac",
       "counts": {
         "reposts": 12,
         "replies": 1,
@@ -722,6 +746,7 @@
       "topics": [],
       "repostOfId": "p_0016",
       "createdAt": 1794754697053,
+      "source": "来自 iPhone 15",
       "counts": {
         "reposts": 1,
         "replies": 3,
@@ -791,6 +816,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794751089134,
+      "source": "来自 iPhone 15 Pro Max",
       "counts": {
         "reposts": 14,
         "replies": 1,
@@ -805,6 +831,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794747481215,
+      "source": "来自 Android 客户端",
       "counts": {
         "reposts": 3,
         "replies": 1,
@@ -821,6 +848,7 @@
       ],
       "repostOfId": null,
       "createdAt": 1794743873296,
+      "source": "来自 iPhone 15",
       "counts": {
         "reposts": 16,
         "replies": 3,
@@ -835,6 +863,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794740265377,
+      "source": "来自 Mac",
       "counts": {
         "reposts": 5,
         "replies": 2,
@@ -849,6 +878,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794736657458,
+      "source": "来自 小米 14",
       "counts": {
         "reposts": 18,
         "replies": 4,
@@ -863,6 +893,7 @@
       "topics": [],
       "repostOfId": "p_0023",
       "createdAt": 1794733049539,
+      "source": "来自 iPhone 15",
       "counts": {
         "reposts": 7,
         "replies": 3,
@@ -902,6 +933,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794729441620,
+      "source": "来自 iPad mini",
       "counts": {
         "reposts": 20,
         "replies": 3,
@@ -944,6 +976,7 @@
       ],
       "repostOfId": null,
       "createdAt": 1794725833701,
+      "source": "来自 Mac",
       "counts": {
         "reposts": 9,
         "replies": 2,
@@ -1013,6 +1046,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794722225782,
+      "source": "来自 Mac",
       "counts": {
         "reposts": 22,
         "replies": 3,
@@ -1046,6 +1080,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794718617863,
+      "source": "来自 Mac",
       "counts": {
         "reposts": 11,
         "replies": 3,
@@ -1085,6 +1120,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794715009944,
+      "source": "来自 Mac",
       "counts": {
         "reposts": 0,
         "replies": 3,
@@ -1099,6 +1135,7 @@
       "topics": [],
       "repostOfId": "p_0029",
       "createdAt": 1794711402025,
+      "source": "来自 iPhone 15",
       "counts": {
         "reposts": 13,
         "replies": 1,
@@ -1122,6 +1159,7 @@
       ],
       "repostOfId": null,
       "createdAt": 1794707794106,
+      "source": "来自 iPhone 15 Pro Max",
       "counts": {
         "reposts": 2,
         "replies": 2,
@@ -1149,6 +1187,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794704186187,
+      "source": "来自 网页版",
       "counts": {
         "reposts": 15,
         "replies": 3,
@@ -1170,6 +1209,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794700578268,
+      "source": "来自 iPhone SE",
       "counts": {
         "reposts": 4,
         "replies": 1,
@@ -1197,6 +1237,7 @@
       "topics": [],
       "repostOfId": null,
       "createdAt": 1794696970349,
+      "source": "来自 iPad Air",
       "counts": {
         "reposts": 17,
         "replies": 0,

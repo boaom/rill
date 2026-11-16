@@ -9,6 +9,11 @@ const target = new URL('../src/data/mock.json', import.meta.url);
 const data = buildMock();
 writeFileSync(target, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
 
+const verified = data.users.filter((u) => u.verified === true).length;
+const sources = new Set(data.statuses.map((p) => p.source)).size;
+const longPost = data.statuses.find((p) => p.id === 'p_0007');
+
 console.log(
-  `[gen:mock] users=${data.users.length} statuses=${data.statuses.length} comments=${data.comments.length} -> src/data/mock.json`,
+  `[gen:mock] users=${data.users.length} statuses=${data.statuses.length} comments=${data.comments.length} ` +
+    `verified=${verified} sources=${sources} longPost=${longPost ? longPost.text.length : 0} -> src/data/mock.json`,
 );

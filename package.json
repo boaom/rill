@@ -11,7 +11,11 @@
     "check:mock": "node scripts/check-mock.mjs",
     "build": "node scripts/check-mock.mjs && tsc --noEmit && vite build",
     "preview": "vite preview --port 4179 --strictPort",
-    "check:ui": "node scripts/check-hit.mjs"
+    "check:ui": "node scripts/check-hit.mjs",
+    "test:write": "node --test server/test/write-ops.mjs",
+    "check:online": "node scripts/check-online-writes.mjs",
+    "server": "node server/index.mjs",
+    "dev:full": "node server/dev-full.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

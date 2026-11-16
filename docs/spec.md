@@ -173,17 +173,33 @@
 
 | 项 | 375 基准 | 768 / 1440 |
 | --- | --- | --- |
-| 内容列 | 单列，左右 padding 16 | `max-width: 640px` 居中 |
-| 顶栏 | 高 52（标题 17/600，右侧动作区 44×44 命中框） | 同 |
-| 卡片 | padding 12 16；作者行高 40；头像 40 / 圆角 20；正文 15px / 行高 1.5 / `-webkit-line-clamp: 6`；计数行高 32，图标 18 | 卡片 padding 16 20 |
-| 图格 | 1 张 → 16:9 满宽（343×193）；2 张 → 2 列 1:1；3 张 → 3 列；4 张 → 2×2；5–9 张 → 3 列，gap 4，单格 ≈111.6 | 随列宽等比 |
-| 详情正文 | 不限行，17px/1.6 | 同 |
-| 回复项 | padding 12 16；楼中楼缩进 8 + 左 2px 引导线 | 同 |
-| 发博输入 | `<textarea>` 最小高 168，字号 17，无边框，占满宽度 | 同 |
-| 发博底部条 | 高 56：工具按钮 36×36，发布按钮高 32 | 同 |
-| tabbar | 高 56 + `env(safe-area-inset-bottom)`；4 项等分；图标 24 + 标签 11 | 定宽 640 居中，仍贴底 |
-| 一屏预算（375×812） | 时间线首屏可见 **≥1.5 张完整卡片**；详情首屏可见正文 + 首条回复；发博首屏输入区 ≥180；我的首屏可见头部 + 首条 | — |
+| 内容列 | 单列，左右 padding 20 | `max-width: 640px` 居中 |
+| 顶栏 | 报头高 46（「溪流 / RILL」+ 关注/推荐 + 刷新；右侧动作区 44×44 命中框） | 同；1440 报头内容随三栏栅格 |
+| 卡片 | padding 14 20；作者行高 22（不渲染头像，昵称/V/handle/时间/来源单行）；正文 16px / 行高 1.75 / `-webkit-line-clamp: 6`；计数行高 32，图标 18 | 卡片 padding 14 20；1440 feed 双列 gap 20 |
+| 图格 | 1 张 → 16:9 满宽；2 张 → 2 列 1:1；3 张 → 3 列；4 张 → 2×2；5–9 张 → 3 列，gap 1，单格 1:1 | 随列宽等比 |
+| 读数条 | 移动端 2 项（条 / 图），黑底白字，固定在 tabbar 上沿 | ≥900 隐藏，整条移到右栏「今日读数」 |
+| 详情正文 | 不限行，17px/1.6（`--rill-fs-detail` / `--rill-lh-detail`） | 同 |
+| 回复项 | padding 14 20；编号 `--rill-text-3` 中性墨色；楼中楼缩进 8 + 左 2px 引导线 | 同 |
+| 发博输入 | `<textarea>` 最小高 168，字号 17，稿纸横线底纹，占满宽度 | 同 |
+| 发博底部条 | 高 56：工具按钮 36×36，发布块黑底白字高 32 | 同 |
+| tabbar | 高 56 + `env(safe-area-inset-bottom)`；4 项等分；图标 19 + 标签 11 | 定宽 640 居中，仍贴底 |
+| 一屏预算（375×812） | 时间线首屏可见 **≥1 张完整卡片 + 日期头条**；详情首屏可见正文 + 首条回复；发博首屏输入区 ≥180；我的首屏可见头部 + 首条 | — |
 | 硬约束 | `document.scrollingElement.scrollWidth <= clientWidth`（无横向滚动）；列表滚动容器为 `window`，不用嵌套滚动区 | 同 |
+
+### 4.7.1 方向 A「日报」落地差异（D-1…D-6）
+
+A 的结构冲突为 0（作者行顺序、正文 6 行、1–9 图格、转发引用、计数行、回复均保留），以下 6 处是口径差异而非结构改写：
+
+| # | 原 spec | A 落地 | 处理 |
+| --- | --- | --- | --- |
+| D-1 | 读数条四项（条/人/回复/图） | 375 只留两项（条 / 图）；1440 整条移到右栏「今日读数」 | 保留 `data-post-count` 等断言；不渲染四项旧读数 |
+| D-2 | 正文 clamp 6；图片无规定 | 同 6 行；折叠态图片**限量 ≤3**（短帖放得下则全量），展开态全量 3×3 | 规则见 §6.1.1；t22 的「折叠态完全不显示图片」已被 t25 取代 |
+| D-3 | 详情正文 15px / 1.5 | 详情长文 17px / 1.6 | 新增 `--rill-fs-detail: 17px` + `--rill-lh-detail: 1.6`，不降回 15/1.5 |
+| D-4 | 回复编号无规定（实现曾用强调色） | 编号用中性墨色 `--rill-text-3`，红只留给可点动作 | 补充规则「编号不得使用强调色」 |
+| D-5 | 认证无规定 | 昵称右 3px、13×13 方框 + 对勾、`currentColor`、`data-verified="true"` | 不合成字段；颜色跟随昵称，不用黄色/品牌色 |
+| D-6 | 详情页来源硬编码「来自 溪流」 | `post.source ?? '来自 溪流'`；时间线作者行与详情作者行**两处**都渲染 | 字段可选；`[data-source]` 文本必须等于源数据 |
+
+> D-2 的「折叠态图片」以 t25 后的 §6.1.1 为准；不要回退到 t22 的纯文字折叠。A 定稿的日期头条为 62px，1440 三栏为 300px / 640px / 260px。
 
 ### 4.8 全局交互（不属于任何单页，但必须有验收点）
 
@@ -412,8 +428,10 @@ export type Action =
 | 容器 | `[data-testid="timeline-root"]` 包住列表 + 空/错误状态区，并带上 `data-post-count`、`data-refresh-count` | — | `timeline-root` |
 | 顶栏 | 标题「时间线」；右侧刷新按钮 | 静态 | `refresh-btn` |
 | feed 段控件 | 「关注」/「推荐」两项，单选 | `u_01.followingCount>0` 的 8 位作者 = 关注流（mock 里取 `u_02..u_09`）；推荐 = 全部 30 条 | `feed-tab`（每个 `<button role="tab">`，选中项 `aria-selected="true"` + `data-selected="true"`） |
-| 卡片 | 作者行（头像占位/昵称/`@handle`/相对时间）→ 正文（≤6 行截断）→ 图格（0–9）→ 转发块（若有）→ 计数行（转发/回复/赞） | `Post` + `Author` | 卡片 `post-card`（`data-post-id`、`data-author-id`、`data-repost-of`） |
+| 卡片 | 作者行（昵称/V/`@handle`/相对时间/来源，单行 22px）→ 正文（≤6 行截断）→ 图格（0–9）→ 转发块（若有）→ 计数行（转发/回复/赞） | `Post` + `Author` | 卡片 `post-card`（`data-post-id`、`data-author-id`、`data-repost-of`） |
 | 正文 | `[data-testid="post-text"]` 包住全文，用 CSS `-webkit-line-clamp: 6` 截断（**DOM 文本完整**），并带 `data-clamped="6"`；详情页同名区块**不带**该属性（AC-DT01 由此区分） | `Post.text` | `post-text` |
+| 读数条 | 375：两项（总条数 / 总图数），黑底白字；≥900 隐藏并移到右栏「今日读数」 | `timeline-root` 派生 | `statbar` |
+| 作者行扩展 | `author.verified === true` → 昵称右 3px 的 13×13 方框 + 对勾（`currentColor`、`data-verified="true"`、`aria-label="已认证"`）；`post.source` 非空 → 作者行最右 12px 灰字（`data-source`、`white-space:nowrap`、`margin-left:auto`） | `Author.verified?`、`Post.source?` | `data-verified`、`data-source` |
 | 相对时间 | `<time data-testid="post-time" datetime="ISO">`：<60s 刚刚 / <60m `n分钟前` / <24h `n小时前` / <7d `n天前` / 其余 `YYYY-MM-DD` | `createdAt` | `post-time` |
 | 计数行 | 三个按钮：转发 `repost-btn`、回复 `reply-btn`（跳到详情并聚焦输入框）、赞 `like-btn`；数字 `repost-count` / `reply-count` / `like-count` | `Counts` + INV-1/2/4 | 同上 |
 | 图格 | 纯 CSS 占位块（`hsl(hue 30% 62%)` + `alt` 文本），**不可点击**（大图查看属 P2）；容器带 `data-media-count="<n>"` | `MediaRef[]` | `media-grid` |
@@ -422,6 +440,14 @@ export type Action =
 | 刷新条 | 顶部可点击刷新（下拉手势可选，按钮必须存在）；刷新 = 可见集回到 20 条 + toast「已刷新」 | — | `refresh-btn` / `refresh-count`（写在根 `data-refresh-count`） |
 | 空态 | 图标 + 「这里还没有内容」+ 「去发一条」按钮（→ `#/compose`） | `probe=empty` | `empty-state` |
 | 错误态 | 「内容没有加载出来」+ 「重试」按钮（清除错误态并渲染正常列表） | `probe=error` | `error-state` / `retry-btn` |
+
+### 6.1.1 新增三样内容规则（A 定稿，t21 数据实渲染）
+
+| 规则 | 内容 | 可机械复验的判据 |
+| --- | --- | --- |
+| 长文折叠 | 卡片正文 `-webkit-line-clamp: 6` + `data-clamped="6"`；判据用 `scrollHeight > clientHeight`（不是字符数）；成立时渲染 `[data-testid="expand-text"]`「展开全文」；点击后仅本条去 clamp、按钮变「收起」、`data-expanded="true"`。详情不折叠（不带 `data-clamped`） | `[data-clamped="6"]` 存在；点击后 `data-expanded="true"` 且该条 `scrollHeight === clientHeight` |
+| 折叠态图片 | **限量而不是隐藏**：折叠态最多一行 3 张；短帖放得下（如 32 字 + 9 图）保持全量；展开态一律全量 3×3。段落间隙归零，避免 `clientHeight` 被撑大 | `p_0007` 折叠态 `[data-media-count="9"]`、`[data-count="3"]`；`p_0002` 短帖 `[data-count="9"]`；展开后 `[data-count="9"]` |
+| 认证与来源 | `verified === true` 时昵称右 3px 渲染 13×13 方框 + 对勾，颜色 `currentColor`、`data-verified="true"` + `aria-label="已认证"`；`source` 在作者行最右、12px、`--rill-text-3`、`data-source`、`white-space:nowrap`、`margin-left:auto`；来源为空则不渲染 | 方框 `getBoundingClientRect()` 宽高 = 13；`[data-source]` 文本 === mock 的 `source`；作者行高度 22px |
 
 ### 6.2 交互
 
@@ -471,7 +497,7 @@ export type Action =
 | 区块 | 内容 | testid |
 | --- | --- | --- |
 | 顶栏 | 返回按钮（`aria-label="返回"`）+ 标题「详情」 | `back-btn` |
-| 作者行 | 头像 / 昵称 / `@handle` / 时间 / 来源「来自 溪流」 | `detail-author` |
+| 作者行 | 昵称 / 认证 / `@handle` / 时间 / 来源（`post.source ?? '来自 溪流'`），单行 22px | `detail-author` |
 | 正文 | 完整正文（不截断），17px/1.6，`#话题#` chip 不可点 | `detail-text` |
 | 图格 | 同卡片规则，最大 9；**不可点击放大** | `detail-media` |
 | 转发原文 | 若 `repostOfId`：内嵌灰底卡片（原作者 + 原文 + 原图格），点击内嵌卡 → 跳到原帖详情（替换当前路由） | `repost-card` |
@@ -569,8 +595,8 @@ export type Action =
 
 | 区块 | 内容 | testid |
 | --- | --- | --- |
-| 头部 | 64px 头像占位（`avatarText` + `avatarHue`）、昵称、`@handle`、简介（≤2 行截断） | `profile-header` `profile-nickname` `profile-bio` |
-| 统计三项 | 关注 / 粉丝 / 微博（微博 = `postCount` + 已发布数，INV-3） | `stat-following` `stat-followers` `stat-posts` |
+| 头部 | 36px 头像占位（`avatarText` + `avatarHue`）、昵称、`@handle`、简介（≤2 行截断） | `profile-header` `profile-nickname` `profile-bio` |
+| 统计三项 | 博文 / 关注 / 粉丝（微博 = `postCount` + 已发布数，INV-3） | `stat-following` `stat-followers` `stat-posts` |
 | 段控件 | 「我的博文」(默认) / 「赞过的」 | `profile-tab`（`data-selected`） |
 | 列表 | 复用卡片（compact 变体：无图格时正文最多 4 行）；我的博文 = 当前用户 authored（mock 3 条 + 已发布），赞过的 = `likedIds` 映射（新到旧）。本页的 `data-post-count` 即本列表条数 | `profile-list` `profile-post-count` |
 | 列表空态 | 「还没有发过内容」/「还没有赞过的内容」 | `profile-empty` |
