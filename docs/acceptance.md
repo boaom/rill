@@ -453,4 +453,22 @@ grep -rnE 'app\.unique\.one|\bUnique\b|sina' src server index.html dist | wc -l 
 
 三次注入都从 0 变 1、撤销即回 0 ⇒ 命令对「品牌标识」这一谓词**不再恒真**。
 
-**仍待同步（不在 t30 范围）**：`docs/spec.md:847`（§15 原始命令）与 `docs/capability-map.md:15`、`:119` 仍写着被滤掉的那条命令与旧口径，需要随 spec 版本一起改；本文件与 `docs/acceptance-a.md` 已按新口径记录。
+**同步状态（t32 复核）**：`docs/spec.md` §15 与 `docs/capability-map.md:15`、`:119` **已同步**（t31 随 t28 的文档改动提交）：spec §15 现给出新命令并把旧命令标注「已废弃，勿再引用」，capability-map 两处命令与口径均已替换。本节保留 t30 时的“待同步”记录作为历史，不再作为未完成事项。
+
+---
+
+## 16. 收尾复验记录（t32）：AC-VF01 翻绿、O2 三页统一
+
+| 项 | t30 状态 | t32 复验（sha `0847cff`） |
+| --- | --- | --- |
+| **AC-VF01 / S4 偏差 O1**（V 标与昵称间距） | 实测 6px ≠ final-spec 3px，判“成立但带偏差” | **通过**：真 375 下对 6 条带 V 作者行逐条量 `getBoundingClientRect()` 差值，`V.left - name.right = ` **3.00**（亮/暗均 `[3,3,3,3,3,3]`）；`VerifiedMark` 仍 13×13、`currentColor`；作者行仍单行 `height=22=scrollHeight`、五项齐全无换行。（时间线 375 截图 `a-timeline-375-{light,dark}.png` 与 t29 版字节一致，未变动——本轮只新增风控态截图） |
+| **O2**（详情页 `RISK_CONTROL` 文案） | 详情落通用文案「内容没有加载出来 / 检查 server 与网络后再试」 | **通过**：假上游全读接口 403，时间线 `error-state`、搜索 `search-error`、详情 `error-state` 三处标题/正文**与源码 `RISK_CONTROL_COPY` 逐字一致**（「触发了风控」/「微博要求人工验证；稍后再试，或换网络。」），详情不再出现通用文案。截图 `docs/shots/a-{timeline,search,detail}-risk-375.png`（均 375×812） |
+| 折叠守门 | `check-hit` 39 条含折叠基线，t30 已反证 | 仍有效：`daily.css` 声明改 2 → **rc=1 PASS 38 / FAIL 2**；`PostCard` clamp 6→5 → **rc=1 PASS 38 / FAIL 2**；恢复 → **rc=0 PASS 39 ALL PASS**。另记：只改 `card.css` 那一行 **不生效**（被 `daily.css` 同声明 + 内联 `--rill-clamp` 覆盖），不会让守卫变红——变异要打在生效处，否则会误判“测试恒真” |
+| 回归 | — | `check:mock`/`tsc`/`build` 全 rc0；离线 `data-post-count=20`、首卡 `p_0001`、`scrollWidth=375`、`runtime-errors=0` |
+| 树与 CI | — | `git ls-files src`=45=`find src`、**验收开始时** `git status --short` 为空（本轮只改 `docs/`，见文末变更范围）；CI run **43840064290** success，`build + checks`（Build #8 → Guard #9 → Hit-test #12）与 `docker build + container smoke` 均 success |
+
+**边界（不变）**：真实 cookie 全链路、在线详情正常态、Docker 本机行为、截图人眼审阅——这四项**仍未验证**，AC-VF01/O2 的修复不改变它们的结论。
+
+详细证据（rect 差值输出、三页文案对比、变异矩阵、CI step 明细）见 `docs/acceptance-a.md` §11；旧结论按“不删除”原则保留在 §3/§9。
+
+**本轮变更范围**：`docs/acceptance-a.md`（追加 §11）、`docs/acceptance.md`（§15 同步状态 + 新增 §16）、新增 3 张 `docs/shots/a-*-risk-375.png`；**未改 `src/`、`server/`、`.github/`、`scripts/`**。

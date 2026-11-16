@@ -13,6 +13,7 @@
 | 变异反证 | **成立**：CSS `line-clamp` 改 2 → `check-hit` **FAIL（38/2）**；TS clamp 6→5 → **FAIL（38/2）**；恢复 → **39/0 ALL PASS** |
 | 假绿修复 | **已修并反证**：禁用串命令注入违规样本 → 1，撤销 → 0（三组样本） |
 | 偏差/观察 | O1（V 间距 6px）、O2（详情页 RISK_CONTROL 用通用文案）、O3（spec/capability-map 旧命令未同步）——都不阻塞，已入 §9 |
+| **t32 更新** | **O1 已修（间距实测 3.00px）、O2 已修（三页同文案）、O3 已由 t31 同步**；AC-VF01 由“带偏差”翻为**通过**，旧结论仍保留在 §3/§9，翻牌证据见 **§11 更新记录** |
 
 ---
 
@@ -126,7 +127,7 @@
 | **S1** 折叠态 6 行 + 「展开全文」可点 | 成立 | `p_0007`：`clientHeight=168=6×28`、`scrollHeight=252`、`clamp=6`；按钮 48×44（有效命中区 50×46）；点击后 `data-expanded=true`、`clientHeight=392=14×28`、`scrollHeight===clientHeight` |
 | **S2** 折叠态图片限量 ≤3，短帖不一刀切 | 成立 | 长帖折叠 `media=3`、展开 9；短正文+9 图 `p_0002`(28字)/`p_0008`(27字)/`p_0011`(29字) 折叠态均 **9 张全量**（`data-count=9`，9 个 111px 图格），无「展开全文」节点 |
 | **S3** 详情 17px/1.6 不折叠 | 成立 | `font-size=17px`、`line-height=27.2px`（1.6）、`--rill-fs-detail=17px`/`--rill-lh-detail=1.6`、无 `data-clamped`、`scrollHeight===clientHeight` |
-| **S4** V 13×13 / currentColor / data-verified / 缺字段不显示 | 成立，**带偏差 O1** | `p_0001`/`p_0007`：13×13、颜色 === 昵称色（亮 `rgb(11,11,11)` 19.683:1 / 暗 `rgb(237,237,237)` 16.002:1）、`data-verified="true"`；缺字段不渲染（`verified !== true → null`）。**偏差：与昵称间距 6px，final-spec 写 3px**（3px `margin-left` + 作者行 `column-gap:3px` 叠加）——**未修复，如实留档，不按 6px 冒充 3px 通过** |
+| **S4** V 13×13 / currentColor / data-verified / 缺字段不显示 | 成立，**带偏差 O1**（← t30 原始判定，**已于 t32 翻绿：3.00px，见 §11**；下文保留原测） | `p_0001`/`p_0007`：13×13、颜色 === 昵称色（亮 `rgb(11,11,11)` 19.683:1 / 暗 `rgb(237,237,237)` 16.002:1）、`data-verified="true"`；缺字段不渲染（`verified !== true → null`）。**偏差：与昵称间距 6px，final-spec 写 3px**（3px `margin-left` + 作者行 `column-gap:3px` 叠加）——**未修复，如实留档，不按 6px 冒充 3px 通过** |
 | **S5** 硬编码消失 + 前缀在呈现层统一 | 成立 | 静态：`grep -rn "来自 溪流" src/` = **0**（含注释）；单一 helper `src/lib/source.ts:displaySource`，`PostCard`/`Detail` 两处共用、条件渲染。动态三臂（假上游）：已带前缀 `来自 iPhone 15 Pro` **原样**；`<a>iPhone客户端</a>` → **`来自 iPhone客户端`**（无「来自 来自」）；无 source → **`[data-source]` 节点不存在**。详情页 `来自 iPhone 13 mini`，右对齐（`padding-right:20px` 贴内容右缘），`emptySpans=0` |
 | **S6** 读数条 375 两项 / 1440 右栏 | 成立 | 375：`.statbar`「30 条 100 图」= 两项；1440：`.side.side--stats` x=1060 w=260 |
 | **S7** 回复编号用 `--rill-text-3` | 成立 | `.reply__n` = `rgb(103,104,95)` === `--rill-text-3` `#67685F`，11px |
@@ -264,9 +265,9 @@ docker build + container smoke   success (9 steps)
 
 | 编号 | 内容 | 现状 | 建议修法 |
 | --- | --- | --- | --- |
-| **O1** | V 与昵称间距 **6px**，final-spec 写 **3px** | 未修复，如实留档（S4 判成立但带偏差） | 删掉 `VerifiedMark` 的 `margin-left:3px`（作者行已有 `column-gap:3px`），或反之，二选一 |
-| **O2** | 详情页 `RISK_CONTROL` 显示通用错误文案 | 态正确、文案不专 | `OnlineDetail.tsx` 在 `authLike` 之外补 `RISK_CONTROL` 分支 |
-| **O3** | `docs/spec.md:847`、`docs/capability-map.md:15,119` 仍用被滤掉的旧命令 | 文档不一致 | 与 §5 新命令同步（t30 范围外） |
+| **O1** | V 与昵称间距 **6px**，final-spec 写 **3px** | **已修（t31 改 / t32 复验 3.00px，见 §11）**；t30 当时状态“未修复，如实留档”保留为历史 | 删掉 `VerifiedMark` 的 `margin-left:3px`（作者行已有 `column-gap:3px`），或反之，二选一 |
+| **O2** | 详情页 `RISK_CONTROL` 显示通用错误文案 | **已修（t31 改 / t32 复验三页同文案，见 §11）**；原状态“态正确、文案不专”保留为历史 | `OnlineDetail.tsx` 在 `authLike` 之外补 `RISK_CONTROL` 分支 |
+| **O3** | `docs/spec.md:847`、`docs/capability-map.md:15,119` 仍用被滤掉的旧命令 | **已同步（t31 随 t28 改动提交）**：spec §15 现为新命令 + 旧命令标“已废弃”，capability-map 两处已改；原状态保留为历史 | 与 §5 新命令同步（t30 范围外） |
 
 ---
 
@@ -290,3 +291,84 @@ node /tmp/verifier/t30-g09.mjs                                 # AC-G09 新口�
 ```
 
 **一句话收尾**：A 的三页版式、折叠契约、认证与尾巴、九宫格、1440 三栏、暗色对比度，这次都落在**一个可复现的提交**上，回归也没坏；t24 的两条硬阻塞（树不完整、变异反证不成立）已分别由 `f410745` 与并入 `check-hit` 的折叠基线关闭；剩下的是一条 3px 的间距偏差（O1）和两条文案/文档项，已如实留档，没拿 6px 冒充通过。
+
+---
+
+## 11. 更新记录（t32 收尾复验，终局 sha `0847cff`）
+
+本节只追加，不改上文任何旧结论：§3 的“带偏差 O1（6px）”与 §9 的 O1/O2/O3 原判定**保留原文**，状态变化在此记录。
+
+### 11.1 AC-VF01（V 标与昵称间距）→ **通过：3.00px**
+
+- **方法（按要求量 rect 差值，不读 CSS 声明）**：`gap = vm.getBoundingClientRect().left - name.getBoundingClientRect().right`，在真 375 视口下对**所有**带 V 的作者行逐条测量，亮/暗各一轮。
+- **命令**：`node /tmp/verifier/t32-probe.mjs`（CDP，`Emulation.setDeviceMetricsOverride 375×812`）。
+- **输出**：
+
+```
+源码 RISK_CONTROL_COPY = {"wantTitle":"触发了风控","wantText":"微博要求人工验证；稍后再试，或换网络。"}
+PASS light: 找到 6 条带 V 的作者行 :: {"pids":["p_0001","p_0003","p_0006","p_0007","p_0011","p_0015"]}
+PASS light: V.left - name.right 全部 = 3.00 :: {"gaps":[3,3,3,3,3,3]}
+PASS light: VerifiedMark 仍 13×13 :: {"vm":{"w":13,"h":13,"color":"rgb(11, 11, 11)","borderColor":"rgb(11, 11, 11)","currentColorEqName":true}}
+PASS light: 作者行仍单行（h=22、scrollH=clientH）且五项齐全 :: {"head":{"h":22,"clientH":22,"scrollH":22,"clientW":335,"scrollW":335,"gapCss":"3px"},"items":[{"k":"name","ok":true},{"k":"vm","ok":true},{"k":"handle","ok":true},{"k":"time","ok":true},{"k":"src","ok":true}]}
+PASS dark: 找到 6 条带 V 的作者行 / V.left - name.right 全部 = 3.00 :: {"gaps":[3,3,3,3,3,3]}
+PASS dark: VerifiedMark 仍 13×13 :: {"vm":{"w":13,"h":13,"color":"rgb(237, 237, 237)","currentColorEqName":true}}
+PASS dark: 作者行仍单行（h=22、scrollH=clientH）且五项齐全
+```
+
+- **同时确认 S4 的既有契约没被改坏**：13×13、`color === borderColor === 昵称色`（`currentColor`，亮 `rgb(11,11,11)` / 暗 `rgb(237,237,237)`）、`data-verified="true"`；作者行仍 `height=22 = scrollHeight=22`、`scrollWidth=clientWidth=335`，**五项（昵称/V/handle/时间/来源）全在且无换行**——收间距没有把行挤断。
+- **归因**：t31 删掉了 `.vm { margin-left: 3px }`，间距只剩作者行 `.card__head { gap: 3px }` 一个来源；t30 的 6px 正是“3px margin + 3px gap”叠加。**这条偏差的根因（两层间距叠加）与修法（只留一层）在实测里都得到印证**：`gapCss` 仍是 3px 而实测差值从 6→3。
+
+### 11.2 O2（详情页风控文案）→ **通过：三页逐字一致**
+
+- **方法**：假上游对全部读接口回 403（`{ok:0,msg:'风控'}`），真 375 视口分别进 `#/timeline`、`#/search`（**真的点 `search-submit` 发起搜索**，不是停在“搜点什么”空态）、`#/status/M1`；期望文案**从源码 `src/data/api.ts` 的 `RISK_CONTROL_COPY` 现场解析**，不用我背下来的字符串。
+- **命令**：`node /tmp/verifier/t32-probe2.mjs`。
+- **输出**：
+
+```
+PASS search 真的发起了（出现 search-error，而不是 search-empty）
+PASS search 标题 = 源码 title
+PASS search 正文 = 源码 text
+PASS detail 标题 = 源码 title
+PASS detail 正文 = 源码 text 且不等于通用文案
+PASS timeline 正文 = 源码 text
+PASS 三页正文逐字一致
+rows = { timeline {testid:error-state,  title:触发了风控, text:微博要求人工验证；稍后再试，或换网络。},
+         search   {testid:search-error, title:触发了风控, text:同上},
+         detail   {testid:error-state,  title:触发了风控, text:同上} }
+```
+
+- **截图（375×812）**：`docs/shots/a-timeline-risk-375.png`、`docs/shots/a-search-risk-375.png`、`docs/shots/a-detail-risk-375.png`。
+- **一处必须说清的口径**：**T30 报告里“详情页风控文案不专”的判断现在不成立了**——但那是 t30 当时的实测（当时代码确实落到通用文案），本轮是另一个 sha。旧结论保留在 §2.3/§9，状态变化记在这里。
+- **另一个必须说清的教训**：我第一版 O2 脚本用“回车键”驱动搜索，实际没触发搜索（页面停在“搜点什么”），而我又给搜索那一条断言写了 `|| true` 式的兜底——**第一次跑出来是 15/15 全绿，但其中 1 条是恒真的假绿**。复查时发现并改成严格断言 + 真点 `search-submit`，才得到上面 7/7。**这正是本任务反复强调的那件事：恒真的检查看起来永远绿。**
+
+### 11.3 守门（check-hit）仍然有效：变异矩阵
+
+| 变异 | 是否真的改变了折叠 | 实测 | `check-hit` |
+| --- | --- | --- | --- |
+| `src/styles/card.css:26` 声明 `var(--rill-clamp…)` → `2` | **否**（`daily.css:143` 同声明在产物里更靠后、胜出；且折叠值来自内联 `--rill-clamp`） | `clamp=6, clientHeight=168` | **PASS 39**（变异没打到生效处，不是测试失效） |
+| `src/styles/daily.css:143` 声明 → `2` | **是** | `clamp=2, clientHeight=56=2×28` | **rc=1 PASS 38 / FAIL 2**，失败项 `{"clamped":"6","clientHeight":56,"scrollHeight":196}` |
+| `src/components/PostCard.tsx` `const clamp = compact ? 4 : 6` → `5` | **是** | `data-clamped=5, clientHeight=140=5×28` | **rc=1 PASS 38 / FAIL 2**，`{"clamped":"5","clientHeight":140}` |
+| 恢复两处 → 重建 | — | `clamp=6, clientHeight=168` | **rc=0 PASS 39 / FAIL 0 / ALL PASS** |
+
+**方法论记录（值得写下来，因为它差点骗过我）**：前两次变异跑出来“全绿”，原因是 **4185 端口上还挂着一个 t30 留下的旧 preview**——我之前的清理命令 `pkill -f "vite preview"` 匹配不到 `node …/vite.js preview` 这种命令行，旧进程一直活着并继续伺服**旧 dist**，于是“变异后仍 6 行”其实是“我量的是旧产物”。改成 `pkill -f "vite.js preview"` + `lsof` 确认端口空出 + 校验 `curl / | grep assets/index-*.js` 与服务端 dist 文件名一致之后，变异矩阵才如上表。**“测试全绿”和“被验对象根本不是新产物”这两件事，看起来一模一样。**
+
+### 11.4 回归不破 + 树与 CI（终局 sha `0847cff`）
+
+| 项 | 结果 |
+| --- | --- |
+| `pnpm run check:mock` | rc=0，`{"users":12,"statuses":30,"comments":60,…,"verified":2,"sources":12,"longPost":243}` |
+| `pnpm exec tsc --noEmit` | rc=0 |
+| `pnpm run build` | rc=0 → `index-BDudWUes.js` 238.46 kB / `index-D98iynny.css` 45.51 kB（新产物，区别于 t30 的 `DYfQkNEH`，因 O1/O2 改了源） |
+| `node scripts/check-hit.mjs` | **PASS 39 / FAIL 0 / ALL PASS** |
+| 离线基线 | `data-post-count=20`、首卡 `p_0001`、`scrollWidth=375`、`data-runtime-errors=0` |
+| `git ls-files src` vs `find src` | **45 = 45**（`git status --short` 在验收开始时为空） |
+| CI run | **43840064290** `conclusion=success`（`head_sha=0847cff…`）：`build + checks` success（Build #8 → **Guard #9** → Server unit #10 / smoke #11 → **Hit-test #12**）、`docker build + container smoke` success |
+
+### 11.5 仍未验证（本轮没有覆盖，继续保留“未验证”）
+
+1. **真实 cookie 全链路**（赞→取消→评论→转发→发文→发图）——仍未对真站执行，凭证从未进仓库。
+2. **在线详情正常态**（假上游返回真实 status 时详情正常渲染）——本轮只验了详情的 **错误态**（403 风控/401 重登），happy path 仍未打通。
+3. **Docker 镜像行为**——只在 CI runner 上验证，本机无 docker。
+4. **截图人眼审阅**——模型不支持读图；本轮新增的三张风控截图同样只作留档。
+
+**AC-VF01 翻绿只说明“这一条间距对了”，不改变上面四条的状态。**
