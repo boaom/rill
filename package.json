@@ -1,0 +1,27 @@
+{
+  "name": "rill",
+  "private": true,
+  "version": "0.1.0",
+  "description": "溪流（Rill）——离线、纯本地假数据的极简信息流客户端",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "gen:mock": "node scripts/gen-mock.mjs",
+    "check:mock": "node scripts/check-mock.mjs",
+    "build": "node scripts/check-mock.mjs && tsc --noEmit && vite build",
+    "preview": "vite preview --port 4179 --strictPort",
+    "check:ui": "node scripts/check-hit.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.6.3",
+    "vite": "^5.4.11"
+  }
+}

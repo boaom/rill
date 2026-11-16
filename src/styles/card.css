@@ -1,0 +1,77 @@
+/* card.css —— 时间线卡片 / 图格 / 引用块 / 计数行 */
+
+.card {
+  position: relative; padding: var(--rill-card-pad-y) var(--rill-card-pad-x);
+  background: var(--rill-surface); border-bottom: var(--rill-border-w) solid var(--rill-border);
+  cursor: pointer;
+  transition: background-color var(--rill-dur-base) var(--rill-ease);
+}
+@media (min-width: 768px) {
+  .card { --rill-card-pad-x: var(--rill-space-20); padding-block: var(--rill-space-16); }
+}
+@media (hover: hover) {
+  .card:hover { background: color-mix(in srgb, var(--rill-surface) 60%, var(--rill-surface-2)); }
+}
+
+.card__head { display: grid; grid-template-columns: var(--rill-avatar) 1fr; grid-template-rows: auto auto; column-gap: var(--rill-space-8); }
+.card__av { grid-row: 1 / span 2; }
+.card__meta { min-width: 0; display: flex; align-items: baseline; gap: var(--rill-space-4); }
+.card__name { margin: 0; font-size: var(--rill-fs-15); font-weight: var(--rill-fw-medium); color: var(--rill-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card__handle { flex: none; font-size: var(--rill-fs-13); color: var(--rill-text-3); }
+.card__time { font-size: var(--rill-fs-13); color: var(--rill-text-3); }
+
+.card__text {
+  margin: var(--rill-space-8) 0 0; font-size: var(--rill-fs-15); line-height: var(--rill-lh-normal);
+  display: -webkit-box; -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--rill-clamp, var(--rill-line-clamp));
+  overflow: hidden; overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.card__media {
+  display: grid; gap: var(--rill-media-gap);
+  margin-top: var(--rill-space-8);
+}
+.card__media[data-count="1"] { grid-template-columns: 1fr; }
+.card__media[data-count="2"] { grid-template-columns: repeat(2, 1fr); }
+.card__media[data-count="3"] { grid-template-columns: repeat(3, 1fr); }
+.card__media[data-count="4"] { grid-template-columns: repeat(2, 1fr); }
+.card__media[data-count="5"],
+.card__media[data-count="6"],
+.card__media[data-count="7"],
+.card__media[data-count="8"],
+.card__media[data-count="9"] { grid-template-columns: repeat(3, 1fr); }
+
+.ph {
+  position: relative; display: grid; place-items: center; border-radius: var(--rill-radius-4);
+  background: hsl(var(--hue, 168) 26% 84%);
+  overflow: hidden; aspect-ratio: 1;
+}
+.ph__glyph { position: relative; color: var(--rill-text-3); opacity: .5; }
+.card__media[data-count="1"] .ph { aspect-ratio: var(--rill-media-ratio); }
+.card__media[data-count="1"] .ph { aspect-ratio: var(--rill-media-ratio); }
+html[data-theme="dark"] .ph, html.theme-dark .ph { background: hsl(var(--hue, 168) 22% 22%); }
+
+.card__quote { margin-top: var(--rill-space-8); padding: var(--rill-space-8) var(--rill-space-12); background: var(--rill-surface-2); border-radius: var(--rill-radius-8); }
+.card__quote__name { margin: 0; font-size: var(--rill-fs-13); font-weight: var(--rill-fw-medium); color: var(--rill-text-2); }
+.card__quote__text {
+  margin: var(--rill-space-2) 0 0; font-size: var(--rill-fs-13); line-height: var(--rill-lh-normal);
+  color: var(--rill-text-2); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+}
+
+.card__actions { display: flex; align-items: center; gap: var(--rill-space-24); height: 32px; margin-top: var(--rill-space-8); }
+
+.act {
+  display: inline-flex; align-items: center; gap: var(--rill-space-6);
+  height: 32px; border: 0; background: none; padding: 0; cursor: pointer; position: relative;
+  color: var(--rill-text-3); font-family: inherit;
+  font-size: var(--rill-fs-13); font-weight: var(--rill-fw-medium);
+}
+.act::after { content: ""; position: absolute; inset: -6px; }
+.act svg { width: var(--rill-icon-sm); height: var(--rill-icon-sm); }
+.act__count { font-variant-numeric: tabular-nums; }
+.act:hover { color: var(--rill-text-2); }
+.act[aria-pressed="true"] { color: var(--rill-like); }
+.act--detail svg { width: 20px; height: 20px; }
+.timeline__more { display: flex; justify-content: center; padding: var(--rill-space-16) 0 var(--rill-space-8); background: var(--rill-bg); }

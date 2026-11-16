@@ -1,0 +1,129 @@
+/* tokens.css —— 只有变量。值改这里，组件不用动。 */
+:root {
+  color-scheme: light;
+
+  /* 颜色 · 亮色（默认） */
+  --rill-bg: #F5F7F6;
+  --rill-surface: #FFFFFF;
+  --rill-surface-2: #EDF2F0;
+  --rill-surface-3: #E1E7E4;
+  --rill-border: #E0E5E2;
+  --rill-border-strong: #828D88;
+  --rill-text: #111A19;
+  --rill-text-2: #48564F;
+  --rill-text-3: #5F6F69;
+  --rill-accent: #0B6E60;
+  --rill-accent-pressed: #08574C;
+  --rill-accent-soft: #E1F2EE;
+  --rill-on-accent: #FFFFFF;
+  --rill-like: #B94237;
+  --rill-danger: #B03A2E;
+  --rill-overlay: rgba(9, 15, 14, .44);
+  --rill-toast-bg: #152221;
+  --rill-toast-text: #F2F6F4;
+  --rill-focus: #0B6E60;
+
+  /* 字族 · 字阶 */
+  --rill-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --rill-fs-11: 11px;
+  --rill-fs-13: 13px;
+  --rill-fs-15: 15px;
+  --rill-fs-17: 17px;
+  --rill-fs-20: 20px;
+  --rill-fs-24: 24px;
+  --rill-lh-tight: 1.35;
+  --rill-lh-normal: 1.5;
+  --rill-lh-relaxed: 1.6;
+  --rill-fw-regular: 400;
+  --rill-fw-medium: 500;
+  --rill-fw-semibold: 600;
+  --rill-tracking-tight: -0.01em;
+
+  /* 间距 */
+  --rill-space-2: 2px;
+  --rill-space-4: 4px;
+  --rill-space-6: 6px;
+  --rill-space-8: 8px;
+  --rill-space-12: 12px;
+  --rill-space-16: 16px;
+  --rill-space-20: 20px;
+  --rill-space-24: 24px;
+  --rill-space-32: 32px;
+  --rill-space-40: 40px;
+  --rill-space-48: 48px;
+  --rill-space-64: 64px;
+
+  /* 圆角 · 描边 · 阴影 */
+  --rill-radius-4: 4px;
+  --rill-radius-8: 8px;
+  --rill-radius-12: 12px;
+  --rill-radius-16: 16px;
+  --rill-radius-20: 20px;
+  --rill-radius-full: 999px;
+  --rill-border-w: 1px;
+  --rill-shadow-1: 0 1px 2px rgba(17, 26, 25, .06);
+  --rill-shadow-2: 0 6px 20px rgba(17, 26, 25, .10);
+  --rill-shadow-3: 0 16px 40px rgba(17, 26, 25, .18);
+
+  /* 动效 · 层级 */
+  --rill-dur-fast: 120ms;
+  --rill-dur-base: 180ms;
+  --rill-dur-slow: 240ms;
+  --rill-ease: cubic-bezier(.2, .8, .2, 1);
+  --rill-ease-spring: cubic-bezier(.34, 1.4, .64, 1);
+  --rill-z-sticky: 10;
+  --rill-z-tabbar: 20;
+  --rill-z-overlay: 30;
+  --rill-z-dialog: 40;
+  --rill-z-toast: 50;
+
+  /* 结构尺寸 */
+  --rill-content-max: 640px;
+  --rill-gutter: 16px;
+  --rill-header-h: 52px;
+  --rill-tabbar-h: 56px;
+  --rill-hit: 44px;
+  --rill-avatar: 40px;
+  --rill-avatar-sm: 32px;
+  --rill-avatar-lg: 64px;
+  --rill-icon: 24px;
+  --rill-icon-sm: 18px;
+  --rill-card-pad-y: 12px;
+  --rill-card-pad-x: 16px;
+  --rill-media-gap: 4px;
+  --rill-media-ratio: 16 / 9;
+  --rill-line-clamp: 6;
+  --rill-textarea-min: 168px;
+  --rill-compose-bar-h: 56px;
+  --rill-sheet-max-h: 82vh;
+  --rill-sheet-w: 480px;
+}
+
+/* 暗色：属性与 class 等价，任选其一；验收可强制切换 */
+[data-theme="dark"],
+html.theme-dark {
+  color-scheme: dark;
+
+  --rill-bg: #0D1312;
+  --rill-surface: #151D1C;
+  --rill-surface-2: #1E2826;
+  --rill-surface-3: #293431;
+  --rill-border: #25302E;
+  --rill-border-strong: #66756F;
+  --rill-text: #E9EFED;
+  --rill-text-2: #A6B3AF;
+  --rill-text-3: #859490;
+  --rill-accent: #4ADFC1;
+  --rill-accent-pressed: #6FE7CE;
+  --rill-accent-soft: #123330;
+  --rill-on-accent: #06201B;
+  --rill-like: #FF7B72;
+  --rill-danger: #FF7A6B;
+  --rill-overlay: rgba(0, 0, 0, .62);
+  --rill-toast-bg: #E9EFED;
+  --rill-toast-text: #111A19;
+  --rill-focus: #4ADFC1;
+  --rill-shadow-1: 0 1px 2px rgba(0, 0, 0, .40);
+  --rill-shadow-2: 0 6px 20px rgba(0, 0, 0, .48);
+  --rill-shadow-3: 0 16px 40px rgba(0, 0, 0, .56);
+}

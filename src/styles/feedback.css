@@ -1,0 +1,52 @@
+/* feedback.css —— toast / 空态 / 错误态 / 动效 / 命中与焦点 */
+
+/* toast：固定在 tabbar 之上，不压内容列中部 */
+.toast-wrap { position: fixed; inset-inline: 0; bottom: calc(var(--rill-tabbar-h) + var(--rill-space-16) + env(safe-area-inset-bottom)); z-index: var(--rill-z-toast); display: flex; justify-content: center; pointer-events: none; }
+.toast {
+  max-width: calc(100% - 32px); height: 40px; padding: 0 var(--rill-space-16);
+  display: flex; align-items: center; border-radius: var(--rill-radius-12);
+  background: var(--rill-toast-bg); color: var(--rill-toast-text);
+  font-size: var(--rill-fs-13); font-weight: var(--rill-fw-medium);
+  box-shadow: var(--rill-shadow-2); pointer-events: none;
+  animation: rill-toast-in var(--rill-dur-base) var(--rill-ease);
+}
+
+/* 空态 / 错误态 */
+.state { padding: var(--rill-space-48) var(--rill-gutter); display: flex; flex-direction: column; align-items: center; text-align: center; }
+.state__art { width: 160px; height: 120px; margin-bottom: var(--rill-space-16); }
+.state__title { margin: 0; font-size: var(--rill-fs-17); font-weight: var(--rill-fw-medium); color: var(--rill-text); }
+.state__text { margin: var(--rill-space-8) 0 0; font-size: var(--rill-fs-13); color: var(--rill-text-3); }
+.state__action { margin-top: var(--rill-space-24); }
+
+/* 点赞微动效、新卡入场 */
+@keyframes rill-like-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.act__icon--like.is-active { color: var(--rill-like); animation: rill-like-pop var(--rill-dur-slow) var(--rill-ease-spring); }
+
+@keyframes rill-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rill-fresh-flash {
+  0%   { box-shadow: inset 0 0 0 2px var(--rill-accent); }
+  100% { box-shadow: inset 0 0 0 2px transparent; }
+}
+.card.is-fresh { animation: rill-fresh-flash 900ms var(--rill-ease); }
+
+@media (prefers-reduced-motion: reduce) {
+  .act__icon--like.is-active, .card.is-fresh, .toast { animation: none; }
+}
+
+/* 主题切换只过渡颜色，别写 all */
+.rill-app, .card, .rill-header, .rill-tabbar, .segment, .detail, .reply-row, .sheet, .btn, .act, .tab, .segment__item {
+  transition-property: background-color, color, border-color, box-shadow, transform;
+  transition-duration: var(--rill-dur-base);
+  transition-timing-function: var(--rill-ease);
+}
+
+/* 焦点：键盘才显示 */
+:focus-visible { outline: 2px solid var(--rill-focus); outline-offset: 2px; }

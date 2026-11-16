@@ -1,0 +1,59 @@
+/* profile.css —— 我的页 + 设置 sheet */
+
+.profile__head { background: var(--rill-surface); padding: var(--rill-space-20) var(--rill-card-pad-x); border-bottom: var(--rill-border-w) solid var(--rill-border); }
+.profile__id { display: flex; align-items: center; gap: var(--rill-space-16); }
+.profile__name { margin: 0; font-size: var(--rill-fs-17); font-weight: var(--rill-fw-semibold); letter-spacing: var(--rill-tracking-tight); }
+.profile__handle { margin: var(--rill-space-2) 0 0; font-size: var(--rill-fs-13); color: var(--rill-text-3); }
+.profile__bio { margin: var(--rill-space-12) 0 0; font-size: var(--rill-fs-15); line-height: var(--rill-lh-normal); color: var(--rill-text-2);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.profile__stats { display: flex; gap: var(--rill-space-24); margin-top: var(--rill-space-16); padding: 0; list-style: none; }
+.profile__stat { display: flex; align-items: baseline; gap: var(--rill-space-4); }
+.profile__stat b { font-size: var(--rill-fs-17); font-weight: var(--rill-fw-semibold); color: var(--rill-text); font-variant-numeric: tabular-nums; }
+.profile__stat span { font-size: var(--rill-fs-11); color: var(--rill-text-3); }
+
+.profile__count { padding: var(--rill-space-8) var(--rill-card-pad-x); font-size: var(--rill-fs-11); color: var(--rill-text-3); background: var(--rill-bg); }
+.profile__list { background: var(--rill-surface); border-top: var(--rill-border-w) solid var(--rill-border); }
+
+/* 设置 sheet：scrim 自绘 + 原生 <dialog open>（不使用 showModal，避免 UA 黑遮罩） */
+.sheet__scrim { position: fixed; inset: 0; z-index: var(--rill-z-overlay); background: var(--rill-overlay); border: 0; padding: 0; }
+.sheet {
+  position: fixed; z-index: var(--rill-z-dialog); inset-inline: 0; bottom: 0;
+  width: 100%; max-height: var(--rill-sheet-max-h); margin: 0; padding: 0;
+  border: 0; border-radius: var(--rill-radius-16) var(--rill-radius-16) 0 0;
+  background: var(--rill-surface); color: var(--rill-text);
+  display: block; box-shadow: var(--rill-shadow-3);
+  font-family: inherit;
+}
+.sheet::backdrop { background: transparent; }
+/* 关键：<dialog> 关闭（无 open 属性）时必须 true 地不渲染。
+   `.sheet{display:block}` 的类选择器优先级高于 UA 的 `dialog:not([open]){display:none}`，
+   不补这一条会让面板在关闭态常驻，盖住 tabbar / 发布按钮 / 卡片操作行。 */
+.sheet:not([open]) { display: none; }
+.sheet__handle { width: 40px; height: 4px; margin: var(--rill-space-8) auto var(--rill-space-4); border-radius: var(--rill-radius-full); background: var(--rill-surface-3); }
+.sheet__head { display: flex; align-items: center; gap: var(--rill-space-8); padding: var(--rill-space-8) var(--rill-space-12) var(--rill-space-8) var(--rill-space-20); }
+.sheet__title { margin: 0; font-size: var(--rill-fs-17); font-weight: var(--rill-fw-semibold); flex: 1; }
+.sheet__body { padding: 0 var(--rill-space-20) calc(var(--rill-space-24) + env(safe-area-inset-bottom)); }
+
+.sheet__row { display: flex; align-items: center; justify-content: space-between; gap: var(--rill-space-16); min-height: 56px; border-bottom: var(--rill-border-w) solid var(--rill-border); }
+.sheet__label { font-size: var(--rill-fs-15); color: var(--rill-text); }
+.sheet__note { display: block; margin-top: var(--rill-space-2); font-size: var(--rill-fs-13); color: var(--rill-text-3); }
+
+.switch { width: 44px; height: 26px; flex: none; border: 0; padding: 0; border-radius: var(--rill-radius-full); background: var(--rill-surface-3); position: relative; cursor: pointer; transition: background-color var(--rill-dur-base) var(--rill-ease); }
+.switch::before { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: var(--rill-radius-full); background: var(--rill-surface); box-shadow: var(--rill-shadow-1); transition: transform var(--rill-dur-base) var(--rill-ease); }
+.switch[aria-checked="true"] { background: var(--rill-accent); }
+.switch[aria-checked="true"]::before { transform: translateX(18px); }
+.switch::after { content: ""; position: absolute; inset: -9px; }
+
+.sheet__danger { min-height: var(--rill-hit); border: 0; background: none; color: var(--rill-danger); font-family: inherit; font-size: var(--rill-fs-15); cursor: pointer; padding: 0; }
+.sheet__danger:hover { text-decoration: underline; }
+.sheet__confirm { display: flex; gap: var(--rill-space-8); justify-content: flex-end; padding-block: var(--rill-space-8); }
+.about-block { margin-top: var(--rill-space-16); font-size: var(--rill-fs-13); line-height: var(--rill-lh-normal); color: var(--rill-text-3); }
+
+@media (min-width: 768px) {
+  .sheet {
+    inset-inline: auto; bottom: auto; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: var(--rill-sheet-w); border-radius: var(--rill-radius-16); max-height: 82vh;
+  }
+  .sheet__handle { display: none; }
+  .sheet__head { padding-top: var(--rill-space-16); }
+}

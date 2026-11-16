@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: build + checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Check mock data
+        run: pnpm run check:mock
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Hit-test UI (coordinate clicks)
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: |
+          set -o pipefail
+          mkdir -p test-results
+          pnpm run check:ui 2>&1 | tee test-results/check-ui.log
+
+      - name: Upload UI failure artifacts / logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-ui-artifacts
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

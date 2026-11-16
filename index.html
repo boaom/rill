@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="溪流：一个离线可用的极简信息流客户端，全部内容为本地假数据。" />
+    <title>溪流</title>
+    <link rel="icon" href="data:," />
+    <script>
+      // 首帧防白闪：在 bundle 之前把已存偏好写到 <html data-theme>。
+      // 只用 localStorage 一个键，无网络、无第三方脚本。
+      (function () {
+        try {
+          var saved = window.localStorage.getItem('rill:v1:theme');
+          var theme = saved === 'dark' || saved === 'light'
+            ? saved
+            : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', theme);
+          if (theme === 'dark') document.documentElement.classList.add('theme-dark');
+          document.documentElement.style.colorScheme = theme;
+        } catch (e) {
+          /* 读不到就保持默认亮色，不抛错 */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
