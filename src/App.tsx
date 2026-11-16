@@ -90,6 +90,7 @@ interface NetworkState {
   mode: ApiMode;
   session: SessionInfo | null;
   config: ConfigInfo | null;
+  loginGuide?: string;
   loaded: boolean;
 }
 
@@ -160,7 +161,7 @@ export default function App() {
     getBootstrap()
       .then((info) => {
         if (!alive) return;
-        setNet({ mode: info.mode, session: info.session, config: info.config, loaded: true });
+        setNet({ mode: info.mode, session: info.session, config: info.config, loginGuide: info.loginGuide, loaded: true });
       })
       .catch(() => {
         if (alive) setNet((prev) => ({ ...prev, loaded: true }));
@@ -326,7 +327,7 @@ export default function App() {
     }
     try {
       const info = await getBootstrap();
-      setNet({ mode: info.mode, session: info.session, config: info.config, loaded: true });
+      setNet({ mode: info.mode, session: info.session, config: info.config, loginGuide: info.loginGuide, loaded: true });
     } catch {
       setNet((prev) => ({ ...prev, session: null, mode: 'offline' }));
     }
@@ -608,6 +609,8 @@ export default function App() {
         return (
           <LoginPage
             online={online}
+            device={net.mode === 'device'}
+            deviceGuide={net.loginGuide}
             onDone={handleLogin}
             onBack={() => goReplace('#/timeline')}
           />

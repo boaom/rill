@@ -38,6 +38,7 @@ export interface BootstrapInfo {
   mode: ApiMode;
   config: ConfigInfo | null;
   session: SessionInfo;
+  loginGuide?: string;
 }
 
 export interface Page<T> {
@@ -165,8 +166,9 @@ async function deviceModule() {
 export async function getBootstrap(): Promise<BootstrapInfo> {
   // 原生壳优先：设备直连不依赖、也不探测本地 server。
   if (isDeviceRuntime()) {
-    const session = await (await deviceModule()).readSession();
-    return { mode: 'device', config: null, session };
+    const client = await deviceModule();
+    const session = await client.readSession();
+    return { mode: 'device', config: null, session, loginGuide: client.DEVICE_LOGIN_GUIDE };
   }
 
   let config: ConfigInfo | null = null;

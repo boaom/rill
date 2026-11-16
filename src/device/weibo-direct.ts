@@ -453,7 +453,6 @@ function toCookieRecord(input: DeviceProviderOptions['cookies']): Record<string,
 }
 
 export class WeiboDirectProvider {
-  name = 'weibo-direct';
   capabilities = { read: true, write: true, images: false };
   cookies: Record<string, string>;
   uid: string | null;

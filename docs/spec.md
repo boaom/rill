@@ -883,7 +883,7 @@ snap 1440,900 /tmp/shot-timeline-1440.png "$BASE/#/timeline"
 
 **依赖策略豁免**：`AC-G12` 的 **web 运行时**仍只有 `react` + `react-dom`。t34 为让 APK 在没有 server 时也能读微博，沿用 t33 的 Capacitor 依赖豁免：`@capacitor/core`、`@capacitor/cli`、`@capacitor/android` 只在 `devDependencies`；web 包不 `import '@capacitor/core'`，原生壳在运行时注入 `window.Capacitor`。`capacitor.config.ts` 已启用 `plugins.CapacitorHttp.enabled = true`，由原生层全局 patch `fetch`；H5 构建产物不包含 Capacitor 运行时。`src/device/**` 只能被动态 `import()`，主包只保留 `window.Capacitor?.isNativePlatform?.()` 的检测与模式分支。
 
-**三种 API 模式**：`src/data/api.ts` 的 `ApiMode = 'offline' | 'backend' | 'device'`。选择规则：原生壳 → `device`；普通浏览器且 server/provider 已认证 → `backend`；其余 → `offline`。页面只通过 `getTimeline` / `getStatus` / `getComments` / `getUser` / `getUserPosts` / `search` 的同一返回结构取数，模式由 `App` 传入；页面代码没有第二种数据结构。原生分支不把 Cookie 发到 server，登录校验通过后只写入设备本地（Preferences 优先，localStorage 兜底，键 `rill:v1:device-cookies`）；登录页明确写“Cookie 只保存在这台设备，不写日志、不上报；等同账号凭证，别外传”。
+**三种 API 模式**：`src/data/api.ts` 的 `ApiMode = 'offline' | 'backend' | 'device'`。选择规则：原生壳 → `device`；普通浏览器且 server/provider 已认证 → `backend`；其余 → `offline`。页面只通过 `getTimeline` / `getStatus` / `getComments` / `getUser` / `getUserPosts` / `search` 的同一返回结构取数，模式由 `App` 传入；页面代码没有第二种数据结构。原生分支不把 Cookie 发到 server，登录校验通过后只写入设备本地（Preferences 优先，localStorage 兜底，键 `rill:v1:device-cookies`）；登录页明确写“Cookie 只保存在这台设备，不写日志、不上报；等同账号凭证，别外传”，并在设备模式给出“电脑浏览器登录 m.weibo.cn → F12 → Application → Cookies → 复制 SUB/SUBP → 传到手机”的备用指引。
 
 **写安全**：设备写请求带 `Idempotency-Key`/本地幂等缓存，失败**不自动重试**；本地分钟桶限制写频率。`like`/`comment` 对应的 m 站端点是**未实测**的私有接口，提供 `setUnverifiedWritesEnabled(false)` 一键降级为只读并返回 `READ_ONLY`（UI 映射为不可用提示）；`setDeviceWritesEnabled(false)` 关闭全部设备写。真实微博的读/写**没有**在本环境用真实账号做端到端验证；`scripts/check-device-direct.mjs` 只证明“代码路径 + 假上游响应”可跑通，不能证明真站可用。
 

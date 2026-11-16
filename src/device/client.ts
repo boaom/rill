@@ -4,6 +4,9 @@ import { ApiError, type ApiMode, type LikeResult, type Page, type StatusPayload,
 import type { Author, FeedTab, MediaRef, Post, Reply } from '../types';
 import { createDeviceProvider, type WeiboDirectProvider } from './weibo-direct';
 import { clearDeviceCookies, getDeviceSession, loadDeviceCookies, saveDeviceCookies } from './session';
+import { DEVICE_LOGIN_GUIDE } from '../auth/device-login-copy';
+
+export { DEVICE_LOGIN_GUIDE };
 
 export interface DeviceSession {
   authenticated: boolean;

@@ -211,6 +211,7 @@ async function main() {
     await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: stub });
     await cdp.send('Page.navigate', { url: `http://127.0.0.1:${STATIC_PORT}/index.html#/login` });
     if (!await cdp.waitFor("document.querySelector('[data-testid=login-root]')", 10000)) throw new Error('登录页未加载');
+    if (!await cdp.waitFor("document.body.innerText.includes('F12') && document.body.innerText.includes('m.weibo.cn')", 5000)) throw new Error('设备登录指引未显示');
     const initial = await cdp.eval("({ device: window.Capacitor.isNativePlatform(), route: document.querySelector('[data-testid=login-root]')?.getAttribute('data-online') })");
     if (!initial.device) throw new Error('Capacitor stub 未生效');
     await cdp.eval(`(() => {

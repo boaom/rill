@@ -4,10 +4,14 @@ import { loginWithCookies, parseCookieInput, ApiError, type SessionInfo } from '
 /** #/login：只支持浏览器复制 cookie，不提供账密/短信登录（微博新设备会二次验证）。 */
 export function LoginPage({
   online,
+  device = false,
+  deviceGuide,
   onDone,
   onBack,
 }: {
   online: boolean;
+  device?: boolean;
+  deviceGuide?: string;
   onDone: (session: SessionInfo) => void;
   onBack: () => void;
 }) {
@@ -65,7 +69,9 @@ export function LoginPage({
         <p className="auth__eyebrow">COOKIE LOGIN</p>
         <h2 className="auth__title">连接你的微博</h2>
         <p className="auth__lead">
-          粘贴微博 Cookie 到下面。
+          {device
+            ? deviceGuide
+            : <>在浏览器打开 <b>m.weibo.cn</b> 并登录，复制请求头里的 Cookie，粘贴到下面。</>}
         </p>
         <div className="auth__note" data-testid="login-privacy-note">
           Cookie 只保存在这台设备，不写日志、不上报；等同账号凭证，别外传。

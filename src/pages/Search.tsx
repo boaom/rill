@@ -139,7 +139,7 @@ export function SearchPage({
               {loading ? '搜索中' : '搜索'}
             </button>
           </form>
-          <p className="search__hint">只读搜索；内容来自微博，低频请求已做 30–60 秒缓存。</p>
+          <p className="search__hint">只读搜索；内容来自微博（m.weibo.cn），低频请求已做 30–60 秒缓存。</p>
 
           {state ? (
             <EmptyState
