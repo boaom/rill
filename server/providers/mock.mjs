@@ -24,7 +24,9 @@ const followingIds = new Set(
 export class MockProvider {
   constructor() {
     this.name = 'mock';
-    this.capabilities = { read: true, write: false, images: false };
+    // 离线写入是客户端 store 的本地行为，不经过 provider；这里声明 write:true
+    // 只为与 weibo provider 的能力口径一致，避免被误读成“离线不能写”。
+    this.capabilities = { read: true, write: true, images: false };
     this.currentUserId = currentUser.id;
   }
 

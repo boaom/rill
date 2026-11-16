@@ -7,6 +7,8 @@ import { Avatar } from '../components/Avatar';
 import { EmptyState } from '../components/EmptyState';
 import { MediaBlock } from '../components/MediaGrid';
 import { TopicText } from '../components/TopicText';
+import { VerifiedMark } from '../components/VerifiedMark';
+import { displaySource } from '../lib/source';
 import { formatRelative, isoTime } from '../lib/time';
 
 const MAX_REPLY = 140;
@@ -75,7 +77,7 @@ export function DetailPage({
     setTarget(null);
   };
 
-  const renderReply = (reply: Reply, parentId: string | null) => {
+  const renderReply = (reply: Reply, parentId: string | null, index: number) => {
     const author = getAuthor(reply.authorId);
     const parent = parentId ? state.replies.find((item) => item.id === parentId) : undefined;
     const kids = groups.childrenOf.get(reply.id) ?? [];
@@ -89,6 +91,7 @@ export function DetailPage({
         key={reply.id}
       >
         <div className="reply-row__head">
+          <span className="reply__n" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
           <Avatar author={author} size="sm" />
           <div className="reply-row__meta">
             <span className="reply-row__name">{author.nickname}</span>
@@ -116,7 +119,7 @@ export function DetailPage({
               {open ? '收起' : `展开 ${kids.length} 条回复`}
             </button>
             <div className="reply-row__children" data-testid="reply-children" data-count={kids.length} hidden={!open}>
-              {kids.map((kid) => renderReply(kid, reply.id))}
+              {kids.map((kid, kidIndex) => renderReply(kid, reply.id, kidIndex))}
             </div>
           </>
         ) : null}
@@ -159,6 +162,7 @@ export function DetailPage({
   }
 
   const author = getAuthor(post.authorId);
+  const source = displaySource(post.source);
   const quoted = post.repostOfId ? findPost(state, post.repostOfId) : undefined;
   const replyCount = replyCountOf(state, post.id);
 
@@ -176,19 +180,18 @@ export function DetailPage({
 
       <article className="detail" data-testid="detail-author">
         <div className="rill-col">
-          <div className="detail__head">
-            <Avatar author={author} size="lg" />
-            <div className="detail__meta">
-              <h2 className="detail__name">{author.nickname}</h2>
-              <p className="detail__sub">
-                <span>@{author.handle}</span>
-                <time dateTime={isoTime(post.createdAt)}>{formatRelative(post.createdAt)}</time>
-                <span className="detail__source">来自 溪流</span>
-              </p>
-            </div>
+          <div className="card__head detail__head">
+            <Avatar author={author} testid="profile-avatar" size="lg" />
+            <h2 className="card__name detail__name">{author.nickname}</h2>
+            <VerifiedMark verified={author.verified} />
+            <span className="card__handle">@{author.handle}</span>
+            <time className="card__time" dateTime={isoTime(post.createdAt)}>{formatRelative(post.createdAt)}</time>
+            {source ? (
+              <span className="card__src" data-source={source}>{source}</span>
+            ) : null}
           </div>
 
-          <p className="detail__text" data-testid="detail-text">
+          <p className="body detail__text" data-testid="detail-text">
             <TopicText text={post.text} />
           </p>
 
@@ -197,13 +200,19 @@ export function DetailPage({
           {quoted ? (
             <button
               type="button"
-              className="detail__quote"
+              className="quote detail__quote"
               data-testid="repost-card"
               onClick={() => onOpen(quoted.id)}
             >
-              <p className="detail__quote__name">{getAuthor(quoted.authorId).nickname}</p>
-              <p className="detail__quote__text">{quoted.text}</p>
-              {quoted.media.length > 0 ? <MediaBlock media={quoted.media} className="detail__media" /> : null}
+              <span className="quote__rail" aria-hidden="true" />
+              <span className="quote__inner">
+                <span className="quote__meta">
+                  <span className="quote__name">{getAuthor(quoted.authorId).nickname}</span>
+                  <span className="quote__handle">@{getAuthor(quoted.authorId).handle}</span>
+                </span>
+                <span className="quote__text"><TopicText text={quoted.text} /></span>
+                {quoted.media.length > 0 ? <MediaBlock media={quoted.media.slice(-1)} className="quote__img detail__quote__img" /> : null}
+              </span>
             </button>
           ) : null}
 
@@ -251,7 +260,7 @@ export function DetailPage({
         {groups.roots.length === 0 ? (
           <EmptyState title="还没有回复，来说第一句" testid="reply-empty" />
         ) : (
-          groups.roots.map((reply) => renderReply(reply, null))
+          groups.roots.map((reply, index) => renderReply(reply, null, index))
         )}
       </div>
     </section>

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { ProfileTab } from '../types';
 import { useStore, displayLikes, displayReposts, findPost, likedByMe, profilePostsFor, repliesOf, statPostCount } from '../store';
 import { getAuthor } from '../data/mock';
@@ -5,6 +6,7 @@ import { Avatar } from '../components/Avatar';
 import { PostCard } from '../components/PostCard';
 import { EmptyState } from '../components/EmptyState';
 import { Segment } from '../components/Segment';
+import { VerifiedMark } from '../components/VerifiedMark';
 
 /** 屏 4 · 我的（spec §9）：信息头 + 统计 + 段控件 + 列表（与统计同源）。 */
 export function ProfilePage({
@@ -17,6 +19,7 @@ export function ProfilePage({
   onRepost,
   onReply,
   onCompose,
+  account,
 }: {
   tab: ProfileTab;
   onTab: (tab: ProfileTab) => void;
@@ -27,6 +30,7 @@ export function ProfilePage({
   onRepost: (postId: string) => void;
   onReply: (postId: string) => void;
   onCompose: () => void;
+  account?: ReactNode;
 }) {
   const { state } = useStore();
   const me = getAuthor('u_01');
@@ -34,11 +38,12 @@ export function ProfilePage({
   const postTotal = statPostCount(state);
 
   return (
-    <section data-testid="profile-root" data-post-count={list.length}>
+    <section className="profile" data-testid="profile-root" data-post-count={list.length}>
       <header className="rill-header">
         <div className="rill-header__inner">
           <h1 className="rill-header__title">我的</h1>
           <span className="rill-header__spacer" />
+          {account}
         </div>
       </header>
 
@@ -48,6 +53,7 @@ export function ProfilePage({
           <div>
             <h2 className="profile__name" data-testid="profile-nickname">
               {me.nickname}
+              <VerifiedMark verified={me.verified} />
             </h2>
             <p className="profile__handle">@{me.handle}</p>
           </div>
@@ -56,6 +62,12 @@ export function ProfilePage({
           {me.bio}
         </p>
         <ul className="profile__stats">
+          <li className="profile__stat">
+            <b data-testid="stat-posts" className="tnum">
+              {postTotal}
+            </b>
+            <span>博文</span>
+          </li>
           <li className="profile__stat">
             <b data-testid="stat-following" className="tnum">
               {me.followingCount}
@@ -67,12 +79,6 @@ export function ProfilePage({
               {me.followerCount}
             </b>
             <span>粉丝</span>
-          </li>
-          <li className="profile__stat">
-            <b data-testid="stat-posts" className="tnum">
-              {postTotal}
-            </b>
-            <span>动态</span>
           </li>
         </ul>
       </div>

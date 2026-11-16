@@ -12,6 +12,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { Toast } from './components/Toast';
+import { AccountChip } from './components/AccountChip';
 import { SettingsSheet } from './components/SettingsSheet';
 import { Tabbar } from './components/Tabbar';
 import {
@@ -37,6 +38,11 @@ import { TimelinePage } from './pages/Timeline';
 import { DetailPage } from './pages/Detail';
 import { ComposePage } from './pages/Compose';
 import { ProfilePage } from './pages/Profile';
+import { OnlineTimelinePage } from './pages/OnlineTimeline';
+import { OnlineDetailPage } from './pages/OnlineDetail';
+import { OnlineProfilePage } from './pages/OnlineProfile';
+import { SearchPage } from './pages/Search';
+import { LoginPage } from './auth/LoginPage';
 import {
   canPublish,
   countTopicsInText,
@@ -52,14 +58,39 @@ import {
   topicsFromText,
 } from './store';
 import { clearAll, KEYS, readNumber, readString, writeNumber, writeString } from './storage';
-import type { AppState, FeedTab, MediaRef, ProfileTab } from './types';
+import type { AppState, Author, FeedTab, MediaRef, Post, ProfileTab } from './types';
+import { getBootstrap, logout as logoutApi, newIdempotencyKey, publishStatus, writeErrorMessage, type ApiMode, type ConfigInfo, type SessionInfo } from './data/api';
 
 const PAGE_SIZE = 20;
 const PAGE_STEP = 10;
 const MEDIA_HUES = [202, 168, 24, 268, 96, 330, 48, 196, 312];
 
+function authorFromSession(session: SessionInfo | null): Author {
+  const uid = session?.user?.uid ?? '';
+  const name = session?.user?.screenName || '我';
+  return {
+    id: uid ? `u${String(uid).replace(/^u/, '')}` : 'u_me',
+    nickname: name,
+    handle: uid ? `u${String(uid).replace(/^u/, '')}` : 'me',
+    avatarText: Array.from(name).slice(0, 2).join('') || '我',
+    avatarHue: 168,
+    bio: '',
+    followingCount: 0,
+    followerCount: 0,
+    postCount: 0,
+    isCurrentUser: true,
+  };
+}
+
 function initState(plan: ProbePlan): AppState {
   return applyProbe(createInitialState({ empty: plan.empty }), plan);
+}
+
+interface NetworkState {
+  mode: ApiMode;
+  session: SessionInfo | null;
+  config: ConfigInfo | null;
+  loaded: boolean;
 }
 
 export default function App() {
@@ -88,7 +119,14 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const [freshPostId, setFreshPostId] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const publishingRef = useRef(false);
+  const publishKeyRef = useRef<string | null>(null);
+  const [publishError, setPublishError] = useState('');
+  const [freshOnlinePost, setFreshOnlinePost] = useState<Post | null>(null);
+  const [freshOnlineAuthor, setFreshOnlineAuthor] = useState<Author | null>(null);
   const [scrollRestored, setScrollRestored] = useState(0);
+  const [net, setNet] = useState<NetworkState>({ mode: 'offline', session: null, config: null, loaded: false });
 
   const toastSeq = useRef(0);
   const toastTimer = useRef(0);
@@ -115,6 +153,21 @@ export default function App() {
 
   useEffect(() => {
     installRuntimeErrorTracking();
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    getBootstrap()
+      .then((info) => {
+        if (!alive) return;
+        setNet({ mode: info.mode, session: info.session, config: info.config, loaded: true });
+      })
+      .catch(() => {
+        if (alive) setNet((prev) => ({ ...prev, loaded: true }));
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // ---- hash 路由 ----
@@ -252,6 +305,36 @@ export default function App() {
     else goReplace('#/timeline');
   }, [goReplace]);
 
+  const online = net.mode === 'online';
+  const openLogin = useCallback(() => go('#/login'), [go]);
+  const handleLogin = useCallback((session: SessionInfo) => {
+    setNet((prev) => ({
+      ...prev,
+      session,
+      mode: prev.config?.provider === 'weibo' && (session.authenticated || session.hasSession)
+        ? 'online'
+        : 'offline',
+    }));
+  }, []);
+  const handleLogout = useCallback(async () => {
+    try {
+      await logoutApi();
+    } catch {
+      /* 本地会话已清不掉时也继续刷新 UI；服务端下次启动会清理过期行。 */
+    }
+    try {
+      const info = await getBootstrap();
+      setNet({ mode: info.mode, session: info.session, config: info.config, loaded: true });
+    } catch {
+      setNet((prev) => ({ ...prev, session: null, mode: 'offline' }));
+    }
+    showToast('已退出登录');
+    goReplace('#/timeline');
+  }, [goReplace, showToast]);
+  const accountChip = (
+    <AccountChip online={online} session={net.session} onLogin={openLogin} onLogout={() => void handleLogout()} />
+  );
+
   // ---- 交互 ----
   const openPost = useCallback((postId: string) => {
     if (location.name === 'status') goReplace(`#/status/${postId}`);
@@ -306,6 +389,8 @@ export default function App() {
   }, []);
 
   const addMedia = useCallback(() => {
+    publishKeyRef.current = null;
+    setPublishError('');
     mediaSeq.current += 1;
     const index = (mediaSeq.current - 1) % MEDIA_HUES.length;
     const media: MediaRef = {
@@ -318,6 +403,8 @@ export default function App() {
   }, []);
 
   const removeMedia = useCallback((mediaId: string) => {
+    publishKeyRef.current = null;
+    setPublishError('');
     setComposeMedia((list) => list.filter((item) => item.id !== mediaId));
   }, []);
 
@@ -325,9 +412,34 @@ export default function App() {
     showToast(kind === 'media' ? '最多 9 张' : '最多 3 个话题');
   }, [showToast]);
 
-  const publish = useCallback(() => {
+  const publish = useCallback(async () => {
     const text = composeText.trim();
-    if (!canPublish(text, composeMedia)) return;
+    if (!canPublish(text, composeMedia) || publishingRef.current) return;
+    if (online) {
+      publishingRef.current = true;
+      setPublishing(true);
+      setPublishError('');
+      const key = publishKeyRef.current || newIdempotencyKey();
+      publishKeyRef.current = key;
+      try {
+        const result = await publishStatus(text, composeMedia, key);
+        setComposeText('');
+        setComposeMedia([]);
+        setDraftSaved(false);
+        writeString(KEYS.draft, '');
+        setFreshOnlinePost(result.post);
+        setFreshOnlineAuthor(authorFromSession(net.session));
+        publishKeyRef.current = null;
+        goReplace('#/timeline');
+        showToast(result.notice || (result.pending ? '已发布（待同步）' : '已发布'), 2600);
+      } catch (reason) {
+        setPublishError(writeErrorMessage(reason));
+      } finally {
+        publishingRef.current = false;
+        setPublishing(false);
+      }
+      return;
+    }
     const postId = nextPostId(state);
     dispatch({ type: 'publish', text, media: composeMedia, topics: topicsFromText(text) });
     setComposeText('');
@@ -338,7 +450,7 @@ export default function App() {
     setVisibleLimit((limit) => limit + 1);
     setFreshPostId(postId);
     showToast('已发布', 2200);
-  }, [composeMedia, composeText, goReplace, showToast, state]);
+  }, [composeMedia, composeText, goReplace, net.session, online, showToast, state]);
 
   const toggleTheme = useCallback(() => {
     dispatch({ type: 'setTheme', theme: state.theme === 'dark' ? 'light' : 'dark' });
@@ -388,7 +500,19 @@ export default function App() {
   const page = (() => {
     switch (location.name) {
       case 'timeline':
-        return (
+        return online ? (
+          <OnlineTimelinePage
+            feedTab={feedTab}
+            onFeedTab={changeFeed}
+            session={net.session}
+            onLogin={openLogin}
+            onLogout={() => void handleLogout()}
+            onOpen={openPost}
+            onToast={showToast}
+            freshPost={freshOnlinePost}
+            freshAuthor={freshOnlineAuthor}
+          />
+        ) : (
           <TimelinePage
             feedTab={feedTab}
             onFeedTab={changeFeed}
@@ -405,10 +529,19 @@ export default function App() {
             onReply={openReply}
             onCompose={() => go('#/compose')}
             freshPostId={freshPostId}
+            account={accountChip}
           />
         );
       case 'status':
-        return (
+        return online ? (
+          <OnlineDetailPage
+            postId={location.id ?? ''}
+            onLogin={openLogin}
+            onBack={goBack}
+            onTimeline={() => go('#/timeline')}
+            onToast={showToast}
+          />
+        ) : (
           <DetailPage
             postId={location.id ?? ''}
             error={errorActive}
@@ -427,18 +560,32 @@ export default function App() {
           <ComposePage
             text={composeText}
             media={composeMedia}
-            onText={setComposeText}
+            onText={(value) => { setComposeText(value); setPublishError(''); publishKeyRef.current = null; }}
             onAddMedia={addMedia}
             onRemoveMedia={removeMedia}
             onNotice={notice}
-            onPublish={publish}
+            onPublish={() => void publish()}
             onCancel={goBack}
             error={plan.error}
             draftSaved={draftSaved}
+            online={online}
+            publishing={publishing}
+            publishError={publishError}
+            onlineNote={online ? '在线发博：当前版本没有真实图片文件输入；图片占位会降级为纯文本，并会在结果里说明。' : ''}
           />
         );
       case 'me':
-        return (
+        return online ? (
+          <OnlineProfilePage
+            tab={profileTab}
+            onTab={setProfileTab}
+            session={net.session}
+            onLogin={openLogin}
+            onLogout={() => void handleLogout()}
+            onOpen={openPost}
+            onToast={showToast}
+          />
+        ) : (
           <ProfilePage
             tab={profileTab}
             onTab={setProfileTab}
@@ -449,6 +596,26 @@ export default function App() {
             onRepost={repostPost}
             onReply={openReply}
             onCompose={() => go('#/compose')}
+            account={accountChip}
+          />
+        );
+      case 'login':
+        return (
+          <LoginPage
+            online={online}
+            onDone={handleLogin}
+            onBack={() => goReplace('#/timeline')}
+          />
+        );
+      case 'search':
+        return (
+          <SearchPage
+            online={online}
+            session={net.session}
+            onLogin={openLogin}
+            onLogout={() => void handleLogout()}
+            onOpen={openPost}
+            onToast={showToast}
           />
         );
       default:
@@ -482,6 +649,10 @@ export default function App() {
           onToggleTheme={toggleTheme}
           onReset={reset}
           onClose={() => setSettingsOpen(false)}
+          online={online}
+          accountName={net.session?.user?.screenName ?? ''}
+          onLogin={openLogin}
+          onLogout={() => void handleLogout()}
         />
         <Toast toast={toast} />
       </StoreProvider>

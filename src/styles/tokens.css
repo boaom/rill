@@ -1,43 +1,52 @@
-/* tokens.css —— 只有变量。值改这里，组件不用动。 */
+/* tokens.css —— 方向 A「日报」定稿变量。组件只引用变量，不写死色值。 */
 :root {
   color-scheme: light;
 
-  /* 颜色 · 亮色（默认） */
-  --rill-bg: #F5F7F6;
+  /* 颜色 · 亮色 */
+  --rill-bg: #FFFFFF;
   --rill-surface: #FFFFFF;
-  --rill-surface-2: #EDF2F0;
-  --rill-surface-3: #E1E7E4;
-  --rill-border: #E0E5E2;
-  --rill-border-strong: #828D88;
-  --rill-text: #111A19;
-  --rill-text-2: #48564F;
-  --rill-text-3: #5F6F69;
-  --rill-accent: #0B6E60;
-  --rill-accent-pressed: #08574C;
-  --rill-accent-soft: #E1F2EE;
+  --rill-surface-2: #F1F1EE;
+  --rill-surface-3: #E2E2DE;
+  --rill-border: #D6D6D1;
+  --rill-border-strong: #0B0B0B;
+  --rill-text: #0B0B0B;
+  --rill-text-2: #46473F;
+  --rill-text-3: #67685F;
+  --rill-accent: #C22F1C;
+  --rill-accent-pressed: #97210F;
+  --rill-accent-soft: #FBE9E6;
   --rill-on-accent: #FFFFFF;
-  --rill-like: #B94237;
-  --rill-danger: #B03A2E;
-  --rill-overlay: rgba(9, 15, 14, .44);
-  --rill-toast-bg: #152221;
-  --rill-toast-text: #F2F6F4;
-  --rill-focus: #0B6E60;
+  --rill-like: #C22F1C;
+  --rill-danger: #A52A1B;
+  --rill-overlay: rgba(11, 11, 11, .44);
+  --rill-toast-bg: #0B0B0B;
+  --rill-toast-text: #FFFFFF;
+  --rill-focus: #C22F1C;
+  --rill-statbar-bg: #0B0B0B;
+  --rill-statbar-fg: #FFFFFF;
+  --rill-statbar-label: #C9C9C4;
+  --rill-pub-bg: #0B0B0B;
+  --rill-pub-fg: #FFFFFF;
 
   /* 字族 · 字阶 */
   --rill-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
-  --rill-fs-11: 11px;
+  --rill-fs-11: 12px;
   --rill-fs-13: 13px;
-  --rill-fs-15: 15px;
+  --rill-fs-15: 16px;
   --rill-fs-17: 17px;
   --rill-fs-20: 20px;
   --rill-fs-24: 24px;
-  --rill-lh-tight: 1.35;
-  --rill-lh-normal: 1.5;
-  --rill-lh-relaxed: 1.6;
+  --rill-fs-display: 62px;
+  --rill-fs-num: 25px;
+  --rill-fs-detail: 17px;
+  --rill-lh-detail: 1.6;
+  --rill-lh-tight: 1.4;
+  --rill-lh-normal: 1.75;
+  --rill-lh-relaxed: 1.85;
   --rill-fw-regular: 400;
   --rill-fw-medium: 500;
-  --rill-fw-semibold: 600;
-  --rill-tracking-tight: -0.01em;
+  --rill-fw-semibold: 650;
+  --rill-tracking-tight: -0.045em;
 
   /* 间距 */
   --rill-space-2: 2px;
@@ -53,17 +62,17 @@
   --rill-space-48: 48px;
   --rill-space-64: 64px;
 
-  /* 圆角 · 描边 · 阴影 */
-  --rill-radius-4: 4px;
-  --rill-radius-8: 8px;
-  --rill-radius-12: 12px;
-  --rill-radius-16: 16px;
-  --rill-radius-20: 20px;
-  --rill-radius-full: 999px;
+  /* 圆角 · 描边 · 阴影：报纸没有圆角 */
+  --rill-radius-4: 0;
+  --rill-radius-8: 0;
+  --rill-radius-12: 0;
+  --rill-radius-16: 0;
+  --rill-radius-20: 0;
+  --rill-radius-full: 0;
   --rill-border-w: 1px;
-  --rill-shadow-1: 0 1px 2px rgba(17, 26, 25, .06);
-  --rill-shadow-2: 0 6px 20px rgba(17, 26, 25, .10);
-  --rill-shadow-3: 0 16px 40px rgba(17, 26, 25, .18);
+  --rill-shadow-1: none;
+  --rill-shadow-2: none;
+  --rill-shadow-3: 0 16px 40px rgba(11, 11, 11, .18);
 
   /* 动效 · 层级 */
   --rill-dur-fast: 120ms;
@@ -79,24 +88,25 @@
 
   /* 结构尺寸 */
   --rill-content-max: 640px;
-  --rill-gutter: 16px;
-  --rill-header-h: 52px;
+  --rill-gutter: 20px;
+  --rill-header-h: 46px;
   --rill-tabbar-h: 56px;
   --rill-hit: 44px;
-  --rill-avatar: 40px;
-  --rill-avatar-sm: 32px;
+  --rill-avatar: 36px;
+  --rill-avatar-sm: 28px;
   --rill-avatar-lg: 64px;
   --rill-icon: 24px;
   --rill-icon-sm: 18px;
-  --rill-card-pad-y: 12px;
-  --rill-card-pad-x: 16px;
-  --rill-media-gap: 4px;
+  --rill-card-pad-y: 14px;
+  --rill-card-pad-x: 20px;
+  --rill-media-gap: 1px;
   --rill-media-ratio: 16 / 9;
   --rill-line-clamp: 6;
   --rill-textarea-min: 168px;
   --rill-compose-bar-h: 56px;
   --rill-sheet-max-h: 82vh;
   --rill-sheet-w: 480px;
+  --rill-vm-size: 13px;
 }
 
 /* 暗色：属性与 class 等价，任选其一；验收可强制切换 */
@@ -104,26 +114,29 @@
 html.theme-dark {
   color-scheme: dark;
 
-  --rill-bg: #0D1312;
-  --rill-surface: #151D1C;
-  --rill-surface-2: #1E2826;
-  --rill-surface-3: #293431;
-  --rill-border: #25302E;
-  --rill-border-strong: #66756F;
-  --rill-text: #E9EFED;
-  --rill-text-2: #A6B3AF;
-  --rill-text-3: #859490;
-  --rill-accent: #4ADFC1;
-  --rill-accent-pressed: #6FE7CE;
-  --rill-accent-soft: #123330;
-  --rill-on-accent: #06201B;
-  --rill-like: #FF7B72;
+  --rill-bg: #0C0C0C;
+  --rill-surface: #121212;
+  --rill-surface-2: #1A1A19;
+  --rill-surface-3: #242422;
+  --rill-border: #333331;
+  --rill-border-strong: #EDEDED;
+  --rill-text: #EDEDED;
+  --rill-text-2: #B4B4AE;
+  --rill-text-3: #8E8E86;
+  --rill-accent: #FF6B4A;
+  --rill-accent-pressed: #FF8A6E;
+  --rill-accent-soft: #2A1612;
+  --rill-on-accent: #0C0C0C;
+  --rill-like: #FF6B4A;
   --rill-danger: #FF7A6B;
   --rill-overlay: rgba(0, 0, 0, .62);
-  --rill-toast-bg: #E9EFED;
-  --rill-toast-text: #111A19;
-  --rill-focus: #4ADFC1;
-  --rill-shadow-1: 0 1px 2px rgba(0, 0, 0, .40);
-  --rill-shadow-2: 0 6px 20px rgba(0, 0, 0, .48);
-  --rill-shadow-3: 0 16px 40px rgba(0, 0, 0, .56);
+  --rill-toast-bg: #EDEDED;
+  --rill-toast-text: #0C0C0C;
+  --rill-focus: #FF6B4A;
+  --rill-statbar-bg: #EDEDED;
+  --rill-statbar-fg: #0C0C0C;
+  --rill-statbar-label: #4A4A44;
+  --rill-pub-bg: #EDEDED;
+  --rill-pub-fg: #0C0C0C;
+  --rill-shadow-3: 0 16px 40px rgba(0, 0, 0, .55);
 }

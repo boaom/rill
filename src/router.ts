@@ -8,7 +8,7 @@
 
 import type { FeedTab, ProfileTab } from './types';
 
-export type RouteName = 'timeline' | 'status' | 'compose' | 'me';
+export type RouteName = 'timeline' | 'status' | 'compose' | 'me' | 'login' | 'search';
 export type ActiveTab = 'timeline' | 'compose' | 'me' | 'settings';
 
 export interface RouteLocation {
@@ -68,6 +68,10 @@ export function parseLocation(hash: string): ParsedLocation {
     name = 'compose';
   } else if (head === 'me' || head === 'profile') {
     name = 'me';
+  } else if (head === 'login') {
+    name = 'login';
+  } else if (head === 'search') {
+    name = 'search';
   }
   // 其余（含空路径、未知路径）→ timeline；靠 canonicalHash 触发重定向。
 
@@ -93,6 +97,10 @@ export function routeTitle(name: RouteName): string {
       return '发博';
     case 'me':
       return '我的';
+    case 'login':
+      return '登录';
+    case 'search':
+      return '搜索';
     default:
       return '溪流';
   }
@@ -100,7 +108,7 @@ export function routeTitle(name: RouteName): string {
 
 /** 详情页仍高亮「时间线」（详情是时间线的压栈页）。 */
 export function activeTabOf(name: RouteName): ActiveTab {
-  return name === 'status' ? 'timeline' : name;
+  return name === 'status' || name === 'login' || name === 'search' ? 'timeline' : name;
 }
 
 /** 滚动位 key：路由 path + 段选（不把 query 里的 probe 算进去）。 */
@@ -116,6 +124,10 @@ export function scrollKeyFor(
       return `me:${profileTab}`;
     case 'status':
       return `status:${location.id ?? 'unknown'}`;
+    case 'login':
+      return 'login';
+    case 'search':
+      return 'search';
     default:
       return 'compose';
   }

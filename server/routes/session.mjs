@@ -27,6 +27,21 @@ export const ALLOWED_COOKIE_NAMES = new Set([
 ]);
 const MAX_COOKIE_VALUE = 4096;
 
+/**
+ * 服务端会话 TTL：30 天，与 rill_sid 的 Max-Age 对齐。
+ * last_seen 只在 GET /api/session（页面启动/显式校验）时续期；读/写请求
+ * 不续期，避免“任何流量都无限续命”把 TTL 变成摆设。超过 TTL 的会话
+ * 视为未登录，并删除 sessions 行与 kv:csrf:<sid>。
+ */
+export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function sessionExpired(row, now = Date.now()) {
+  if (!row) return true;
+  const lastSeen = Number(row.last_seen);
+  if (!Number.isFinite(lastSeen)) return true;
+  return now - lastSeen > SESSION_TTL_MS;
+}
+
 function modeFor(provider) {
   return provider === 'weibo' ? 'online' : 'offline';
 }
@@ -45,6 +60,11 @@ export function readSession(req, ctx) {
   if (!sid) return null;
   const row = ctx.store.getSession(sid);
   if (!row) return null;
+  if (sessionExpired(row)) {
+    // deleteSession 同时清 kv:csrf:<sid>；不在这里清 cookie（readSession 没有 res）。
+    ctx.store.deleteSession(sid);
+    return null;
+  }
   try {
     const storedCookies = decryptJson(ctx.secret, {
       encrypted: row.cookies_enc,
@@ -152,6 +172,12 @@ export async function handleSessionGet(req, res, ctx) {
 
   const row = ctx.store.getSession(sid);
   if (!row) {
+    sendJson(res, 200, fallback);
+    return;
+  }
+  if (sessionExpired(row)) {
+    ctx.store.deleteSession(sid);
+    clearSessionCookie(res, ctx);
     sendJson(res, 200, fallback);
     return;
   }

@@ -9,6 +9,8 @@ import './styles/detail.css';
 import './styles/compose.css';
 import './styles/profile.css';
 import './styles/feedback.css';
+import './styles/auth.css';
+import './styles/daily.css';
 
 installRuntimeErrorTracking();
 

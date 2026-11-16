@@ -19,6 +19,10 @@ export function ComposePage({
   onCancel,
   error,
   draftSaved,
+  online = false,
+  publishing = false,
+  publishError = '',
+  onlineNote = '',
 }: {
   text: string;
   media: MediaRef[];
@@ -30,8 +34,13 @@ export function ComposePage({
   onCancel: () => void;
   error: boolean;
   draftSaved: boolean;
+  online?: boolean;
+  publishing?: boolean;
+  publishError?: string;
+  onlineNote?: string;
 }) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const textLimit = online ? 140 : MAX_TEXT;
 
   useEffect(() => {
     if (error) inputRef.current?.focus();
@@ -46,7 +55,7 @@ export function ComposePage({
     const start = input?.selectionStart ?? text.length;
     const end = input?.selectionEnd ?? text.length;
     const token = '#新话题#';
-    const next = `${text.slice(0, start)}${token}${text.slice(end)}`.slice(0, MAX_TEXT);
+    const next = `${text.slice(0, start)}${token}${text.slice(end)}`.slice(0, textLimit);
     onText(next);
     requestAnimationFrame(() => {
       if (!input) return;
@@ -63,11 +72,11 @@ export function ComposePage({
     onAddMedia();
   };
 
-  const warn = text.length >= 450;
+  const warn = text.length >= (online ? 120 : 450);
   const enabled = canPublish(text, media);
 
   return (
-    <section data-testid="compose-root" className="compose">
+    <section data-testid="compose-root" className="compose" data-online={online ? 'true' : 'false'}>
       <header className="rill-header">
         <div className="rill-header__inner">
           <button type="button" className="btn btn--text" data-testid="compose-cancel" aria-label="取消" onClick={onCancel}>
@@ -79,10 +88,13 @@ export function ComposePage({
       </header>
 
       <div className="compose__body">
-        {error ? (
+        {error || publishError ? (
           <div className="alert" data-testid="publish-error" role="alert">
-            发布失败，内容已存为草稿
+            {publishError || '发布失败，内容已存为草稿'}
           </div>
+        ) : null}
+        {online && onlineNote ? (
+          <p className="compose__online-note" data-testid="compose-online-note">{onlineNote}</p>
         ) : null}
 
         <textarea
@@ -90,9 +102,9 @@ export function ComposePage({
           className="compose__input"
           data-testid="compose-input"
           placeholder="此刻想说什么…"
-          maxLength={MAX_TEXT}
+          maxLength={textLimit}
           value={text}
-          onChange={(event) => onText(event.target.value.slice(0, MAX_TEXT))}
+          onChange={(event) => onText(event.target.value.slice(0, textLimit))}
         />
 
         <div className="compose__meta">
@@ -104,7 +116,7 @@ export function ComposePage({
             <span />
           )}
           <span className={`compose__count${warn ? ' is-warn' : ''}`} data-testid="compose-count">
-            {text.length}/{MAX_TEXT}
+            {text.length}/{textLimit}
           </span>
         </div>
 
@@ -136,8 +148,8 @@ export function ComposePage({
         <button type="button" className="compose__tool compose__tool--topic" data-testid="add-topic" aria-label="添加话题" onClick={insertTopic}>
           #
         </button>
-        <button type="button" className="btn btn--primary" data-testid="publish-btn" disabled={!enabled} onClick={onPublish}>
-          发布
+        <button type="button" className="btn btn--primary" data-testid="publish-btn" disabled={!enabled || publishing} onClick={onPublish}>
+          {publishing ? '发布中…' : '发布'}
         </button>
       </div>
     </section>

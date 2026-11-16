@@ -17,10 +17,10 @@
 | A6 加密实现 | **通过**（10/10 node:test） |
 | A7 供应链 | **通过** |
 | B 功能验收 | **通过**：offline 无回归（build / typecheck / check-hit / 46 条 AC），online 假 cookie 全链路可用 |
-| C CI 扩展 | **已落地但预判会红一处**：`docker build` 会因 Dockerfile 缺 `COPY server` 失败（D1，blocker，超出本次可改范围，见 §7） |
+| C CI 扩展 | **已落地且首跑绿**：D1 已由 captain 修掉（`e27174e`），docker job 在 run `43828855776` 上**全绿**（详见 §7.1；日志匿名不可读，结论依据是 step 级结论+时序+产物） |
 | 真实 cookie 联调 | **未验证**：我手上没有真实凭证，**不要当成已验证**；清单在 `server/test/real-cookie-checklist.md` |
 
-**整体判定：安全项全通过；Docker 构建项失败（D1，交付物缺陷，不在 t20 可改范围）；真实账号联调未验证。** 因为 CI 的 docker job 会如实变红，这一点必须让下游知道，不能算"绿"。
+**整体判定：安全项全通过；Docker 构建项曾因 D1 失败，修复后由 CI 首跑证实转绿（§7.1）；真实账号联调仍未验证。** D1 是本次审计发现的真实缺陷（不是 CI 配置问题），它的价值在"没被脚本吞掉"。
 
 ## 1. A1 凭证不出库
 
@@ -166,7 +166,93 @@ index.html package.json pnpm-lock.yaml pnpm-workspace.yaml scripts src tsconfig.
 
 修复（一行）：build 阶段补 `COPY server ./server`（或运行时阶段直接从构建上下文 `COPY server ./server`，不经过 build 阶段）。
 **影响**：新增的 `docker` job 会红，直到这行修好；这是**如实失败**，不是 CI 配置写错。
+**已修**：captain 在 `e27174e` 的 build 阶段补了 `COPY server ./server`（第 15 行）；我在该提交上重跑了"逐条 COPY 源存在性"检查（9/9 存在）与"build 阶段目录复现"（`server/` 已在内），确认根因消失。见 §7.1 的 CI 实证。
+### 7.1 CI 首跑实证（D1 修复后，run 43828855776）
+
+我在 `e27174e` 的 run 上**独立读 GitHub API 判定**（不是转述 captain 的结论）。可匿名读到的证据与判定：
+
+| 证据 | 值 | 说明 |
+| --- | --- | --- |
+| run | `43828855776`，head_sha `e27174e…`，event `push`，conclusion **success** | 确实是修复提交触发的那一次 |
+| job `build + checks` | success，12 个 step 全 success（08:08:25→08:09:07） | 与改动前 run `43820835316` 的 step 集合对比，多了我新加的 `Server unit tests` 与 `Server smoke` |
+| job `docker build + container smoke` | **success**，`docker version` / `docker build` / `Container smoke` / `Upload` / `Cleanup` 全 success | 本 job 是该仓库**第一次**出现在 CI 里（上一版只有 1 个 job） |
+| `Container smoke` 用时 | **2s**（08:08:41→08:08:43） | 我的脚本在 `ok != 1` 时 `exit 1`；2 秒内通过 ⇒ `docker run` 成功且容器内 `/api/health` **真的**回了 200（若镜像不存在/容器没起来，会先空转 30 秒再失败） |
+| `docker build` 用时 | 13s（08:08:28→08:08:41） | 与同 run 的 `Build`(2s)、`Install`(2s) 量级一致；含 `pull node:26-alpine`(~63MB) + `npm i -g pnpm` + `pnpm install` + `vite build`，13s 在 fast runner 上合理 |
+| 产物 | `docker-artifacts` 2670 B（08:08:44 创建，含 `docker-build.log` + `container-health.json`） | 上传 step 真有文件可传 |
+| `node:26-alpine` 标签 | Docker Hub 上 **存在**（amd64 `sha256:a90bda29…`，62.9MB，`tag_status: active`） | "标签不存在"这个假设**排除**，且这条是独立于 CI 查的 |
+
+**读不到的（如实说）**：`GET /runs/{id}/logs` → **403 "Must have admin rights"**；artifact `archive_download_url` → **401 "Requires authentication"**（匿名无权限）。所以我**没有**逐层读到 build 输出，无法断言"哪一层走了缓存""镜像体积多少"。我的结论强度是「step 级结论 + 时序一致性 + 产物存在 + 独立查到的标签存在」，不是「我看见构建日志说 OK」。
+
+### 7.2 这次绿**没有**覆盖的三件事（别把绿读大）
+
+1. **镜像自带的 `HEALTHCHECK` 指令**：CI 的 smoke 用宿主机 `curl` 断言 `/api/health`，没有等 30s 后读 `docker inspect` 的 `State.Health.Status` ⇒ 镜像里那条 `HEALTHCHECK` 是否真的转 healthy 未被断言。
+2. **`RILL_SECRET` 缺失时的行为**：smoke 显式传了 `-e RILL_SECRET=…`；裸 `docker run rill:ci` 会因无密钥 `exit 1`（属设计，但没被 CI 断言）。
+3. **`docker compose up` 路径**：`docker-compose.yml` 在 CI 里完全没跑过（compose 与 Dockerfile 是两条路）。
+
+建议（下一轮 CI 改动，逐条可加）：`docker run -d` 后 `sleep 35` 再 `docker inspect --format '{{.State.Health.Status}}'` 断言 `healthy`；单独加一条"无 `RILL_SECRET` 时容器必须退出非 0 且日志含 `RILL_SECRET`"的反向断言；compose 用 `docker compose config` 做静态校验（不起服务，省时间）。
+
 另注：镜像运行时 `RILL_SECRET` 没有默认值（`server` 无密钥会 `exit 1`），所以 `docker run` 必须传 `-e RILL_SECRET=…`（CI 的容器 smoke 已传）；`docker-compose.yml` 已用 `${RILL_SECRET:?}` 强制。
+
+### 7.3 这个绿**不等于**"仓库里的应用被验过"（独立复核发现）
+
+在核对 D1 修复时我顺手查了"新 clone 能不能 build 出交付的那个应用"，结论是**不能**：
+
+```bash
+git ls-tree -r --name-only e27174e | grep -c '^src/'        # 33
+find src -type f | wc -l                                    # 44
+git status --porcelain --untracked-files=all | grep -c '^??' # 11
+git status --porcelain | grep -c '^ M'                       # 17
+git cat-file -e e27174e:src/data/api.ts                      # fatal: exists on disk, but not in 'e27174e'
+```
+
+未跟踪的 11 个文件正好是**在线链路的前端全部**：
+
+```
+src/auth/LoginPage.tsx  src/data/api.ts        src/pages/OnlineTimeline.tsx
+src/pages/OnlineDetail.tsx  src/pages/OnlineProfile.tsx  src/pages/Search.tsx
+src/components/AccountChip.tsx  src/components/VerifiedMark.tsx  src/components/WriteSheet.tsx
+src/styles/auth.css  src/styles/daily.css
+```
+
+（`.gitignore` 的 `data/` → `/data/` 已修好，`git check-ignore` 对这 11 个文件现在全部为空、`git add -n` 预演可加入 ⇒ **规则不再是障碍，只是没人 `git add`**。）
+
+**后果（很重要）**：
+
+1. `clone` 出来的仓库 = **纯离线版**（提交版 `src/App.tsx` 里没有 login/auth/api 引用，实测 `git show e27174e:src/App.tsx | grep -n "api\|Auth\|Login"` 为空）→ `#/login`、`#/search`、在线时间线、发博在线态在新 clone 里**都不存在**。
+2. 因此 CI 的绿（含 docker job）证明的是「**离线前端 + server + 镜像装配**」这条链，**不能**用来给在线链路背书；run `43828855776` 的 checkout 里根本没有那 11 个文件。
+3. `server/` 已入库（15 个文件），`src/data/mock.json` 也已在 ⇒ 服务能起、`/api/health` 能 200（这也解释了 docker smoke 为什么能绿：镜像跑的是 mock 模式的 server，不依赖前端）。
+
+**建议的处置**（顺序执行，缺一不可）：
+
+```bash
+git add -A src/          # 或逐个 add 上面 11 个 + 17 个改动
+git commit -m "feat(online): 把在线链路的前端与 api 客户端入库"
+```
+
+并在 CI 里加一条「交付物存在性」护栏，防止"绿得虚"再次发生。**护栏已做变异反证（证明它不是恒真）**，实测矩阵（一次性 clone，不碰工作树）：
+
+| 场景 | 护栏结果 | 期望 |
+| --- | --- | --- |
+| A 纯净 clone（提交树、无 `dist`） | FAIL | FAIL ✓ |
+| B 有 `dist`（含 `login-input`），但 `src/data/api.ts` 未提交 | FAIL | FAIL ✓ —— 证明产物在位**不能**掩盖源码缺失 |
+| C 在线前端已提交 + `dist` 在位 | PASS | PASS ✓ |
+| D 变异：删掉 `src/data/api.ts` | FAIL | FAIL ✓ |
+| E 恢复 | PASS | PASS ✓ |
+| F 变异：`git rm --cached`（文件仍在磁盘） | **PASS** | —— **这是护栏的真实缺口** |
+
+F 说明 captain 采纳的写法 `test -f …` 只查磁盘，抓不到"不在索引里"的情况（CI 的干净 checkout 里不会发生，但在本地/脏树上会）。**建议护栏加一行索引态断言**，两边都成立：
+
+```yaml
+- name: Guard - 在线路由必须真的在仓库里（必须在 Build 之后，因为要 grep dist）
+  run: |
+    git ls-files --error-unmatch src/auth/LoginPage.tsx src/data/api.ts   # 索引态：比 test -f 更强
+    grep -q 'login-input' dist/assets/*.js
+```
+
+谓词有效性已核：当前 `dist/assets/*.js` 里 `login-input` / `login-privacy-note` / `search-offline` 各命中 1 次（构建产物保留 testid 字面量）。
+
+
+
 
 ## 8. 我额外查的四项（captain 指定"别只复核我验过的"）
 
@@ -185,7 +271,7 @@ index.html package.json pnpm-lock.yaml pnpm-workspace.yaml scripts src tsconfig.
 | 项 | 命令 | 结果 |
 | --- | --- | --- |
 | 构建 | `pnpm build`（= `check:mock` + `tsc --noEmit` + `vite build`） | ✅ 68 modules；`dist/assets/index-B1_Ifusu.css` 31.03 kB、`index-DeOvflmW.js` 232.45 kB；mock 元数据 `verified:2, sources:12, longPost:243` |
-| 坐标点击自证 | `node scripts/check-hit.mjs` | ✅ **ALL PASS**（35 条断言；含 375/768/1440 三档、tabbar 4 项、sheet 关闭态、compose 发布） |
+| 坐标点击自证 | `node scripts/check-hit.mjs` | ✅ **ALL PASS**（39 条断言；含 375/768/1440 三档、tabbar 4 项、sheet 关闭态、compose 发布） |
 | 49 条 AC 重跑 | `node /tmp/verifier/ac.mjs`（自建 preview :4179） | ✅ **46 条 AC / 218 断言全通过**，`failedIds=[]`，`externalRequests=[]` |
 
 > AC 计数口径说明：本轮 suite 输出 46 行（t8 记的是 49 行）；差异来自 suite 版本（`shotsBad` 等 3 项在 t15 之后合并进截图断言），不是产品失败。**0 条失败**是事实。
@@ -214,13 +300,13 @@ index.html package.json pnpm-lock.yaml pnpm-workspace.yaml scripts src tsconfig.
 ### 9.3 未验证（不能写成已验证）
 
 - **真实 cookie 全链路**：我手上没有真实凭证，like → unlike → comment → repost → text publish → image publish 一次都没在真站跑过。清单在 `server/test/real-cookie-checklist.md`，**需用户首次登录后按清单联调**。
-- **Docker 镜像**：本机无 docker，只有 CI runner 能证明；预期当前会因 D1 失败。
+- **Docker 镜像**：本机无 docker，只能由 CI runner 证明 —— D1 修复后首跑已绿（§7.1）；但镜像**自带的 HEALTHCHECK 指令**、`RILL_SECRET` 缺失时的启动行为（除 compose 外）、`docker compose up` 仍未在 CI 中被断言（见 §7.2 缺口）。
 
 ## 10. 风险清单汇总
 
 | ID | 项 | 等级 | 状态 | 归属 |
 | --- | --- | --- | --- | --- |
-| D1 | Dockerfile build 阶段缺 `COPY server` → `docker build` 必失败 | **blocker**（交付物） | 待修（不在 t20 范围） | t17 交付物 |
+| D1 | Dockerfile build 阶段缺 `COPY server` → `docker build` 必失败 | **blocker**（交付物） | **已修**（`e27174e`）并经 CI 首跑证实 | t17 交付物 |
 | M1 | 会话无服务端过期 + 过期行/`kv` 行不清理 | 中 | 待修 | server |
 | M2 | 上游校验失败时登录页不报错（显示"待确认"成功态） | 中 | 待修（UX） | src/auth |
 | L1 | bootstrap「无 sid + 无 Origin」放行 | 低（设计性） | 文档化 | server/routes |
@@ -228,6 +314,8 @@ index.html package.json pnpm-lock.yaml pnpm-workspace.yaml scripts src tsconfig.
 | L3 | 反代后限流按同一 IP 计 | 低（部署） | 文档化 | 部署 |
 | L4 | mock 模式未登录可写（离线语义） | 低（设计性） | 文档化 | server/routes |
 | L5 | 每次写多打一次 `/api/config` | 低（性能） | 可选优化 | server/providers |
+| **F1** | 在线模式**丢弃上游 `source`**：`_postFromMblog` 返回对象里没有 `source` 键 ⇒ 真实数据下尾巴永远回落「来自 溪流」，mock 里做的 12 种来源在线全看不到 | 中（功能缺失；mock↔online 不对称） | 待修（建议并入 t26） | `server/providers/weibo.mjs` `_postFromMblog` |
+| **F2** | 在线模式**丢弃 `verified`**：`authorFromUser` 返回对象里没有 `verified` 键 ⇒ 在线永不显示 V 认证徽章（`src/types.ts:25` 已声明该字段并注明"在线适配层可能缺省"） | 中（功能缺失） | 待修（建议并入 t26） | `server/providers/weibo.mjs` `authorFromUser` |
 
 ## 11. 复跑命令
 

@@ -75,8 +75,20 @@ export function serializeCookie(name, value, { maxAge, secure = false, httpOnly 
   return parts.join('; ');
 }
 
-export function clientIp(req) {
-  const raw = req.socket.remoteAddress || '';
+/**
+ * 取客户端 IP。默认不信任 X-Forwarded-For（直连安全，伪造无效）。
+ * 仅当 RILL_TRUST_PROXY=1 时采信 XFF 的**最后一跳**：那是与你直连的反代
+ * 写进来的地址；前面的跳数可能由客户端伪造。直连不要开；只有前面确实
+ * 有你自己控制的反代时才开（见 server/README.md）。
+ */
+export function clientIp(req, { trustProxy = process.env.RILL_TRUST_PROXY === '1' } = {}) {
+  if (trustProxy) {
+    const header = req.headers?.['x-forwarded-for'];
+    const raw = Array.isArray(header) ? header.join(',') : String(header || '');
+    const hops = raw.split(',').map((hop) => hop.trim()).filter(Boolean);
+    if (hops.length) return hops[hops.length - 1];
+  }
+  const raw = req.socket?.remoteAddress || '';
   return raw.replace(/^::ffff:/, '') || 'unknown';
 }
 

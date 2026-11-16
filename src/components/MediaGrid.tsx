@@ -25,15 +25,25 @@ export function MediaBlock({
   media,
   className,
   testid,
+  limit,
 }: {
   media: MediaRef[];
   className?: string;
   testid?: string;
+  /** 折叠态最多渲染几张；缺省全量。容器仍记录原始总数。 */
+  limit?: number;
 }) {
   if (media.length === 0) return null;
+  const shown = typeof limit === 'number' ? media.slice(0, Math.max(1, limit)) : media;
   return (
-    <div className={className ?? 'card__media'} data-testid={testid} data-media-count={media.length} data-count={media.length}>
-      {media.map((item) => (
+    <div
+      className={className ?? 'card__media'}
+      data-testid={testid}
+      data-media-count={media.length}
+      data-count={shown.length}
+      data-limited={shown.length < media.length ? 'true' : undefined}
+    >
+      {shown.map((item) => (
         <Ph key={item.id} media={item} />
       ))}
     </div>

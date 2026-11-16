@@ -31,7 +31,14 @@ export async function serveStatic(req, res, root) {
     sendJson(res, 405, { error: 'method_not_allowed' });
     return;
   }
-  const rawPath = decodeURIComponent((req.url || '/').split('?')[0]);
+  let rawPath;
+  try {
+    rawPath = decodeURIComponent((req.url || '/').split('?')[0]);
+  } catch {
+    // 畸形 percent-encoding 是客户端错误；不能让它冒泡成 500，也不能回退 SPA。
+    sendEmpty(res, 400);
+    return;
+  }
   const relative = rawPath === '/' ? 'index.html' : rawPath.replace(/^\/+/, '');
   let file = resolveInside(root, relative);
   try {

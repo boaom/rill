@@ -58,3 +58,18 @@
   border-radius: var(--rill-radius-4); color: var(--rill-danger);
   font-size: var(--rill-fs-13);
 }
+/* 写操作小弹层（转发/评论）——复用 sheet 的底部弹层与发博输入语义。 */
+.write-sheet__body { padding: 0 var(--rill-space-20) calc(var(--rill-space-20) + env(safe-area-inset-bottom)); }
+.write-sheet__input {
+  width: 100%; min-height: 112px; resize: vertical; padding: var(--rill-space-12);
+  border: var(--rill-border-w) solid var(--rill-border-strong); border-radius: var(--rill-radius-12);
+  background: var(--rill-surface); color: var(--rill-text); font-family: inherit;
+  font-size: var(--rill-fs-15); line-height: 1.6;
+}
+.write-sheet__input:focus-visible { outline: 2px solid var(--rill-focus); outline-offset: 2px; }
+.write-sheet__meta { display: flex; justify-content: space-between; gap: var(--rill-space-8); margin-top: var(--rill-space-4); color: var(--rill-text-3); font-size: var(--rill-fs-11); }
+.write-sheet__error { margin: var(--rill-space-8) 0 0; color: var(--rill-danger); font-size: var(--rill-fs-13); line-height: 1.5; }
+.write-sheet__busy { color: var(--rill-text-3); }
+.write-sheet__actions { display: flex; justify-content: flex-end; gap: var(--rill-space-8); margin-top: var(--rill-space-12); }
+
+.compose__online-note { margin: 0 0 var(--rill-space-8); color: var(--rill-text-3); font-size: var(--rill-fs-13); line-height: 1.5; }

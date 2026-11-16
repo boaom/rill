@@ -503,7 +503,59 @@ try {
   check('关闭态旧 reset 坐标点击不清空数据', keysAfter.includes('rill:v1:__hit_probe__') && keysAfter.length === keysBefore.length, { keysBefore, keysAfter });
   check('关闭态旧 reset 坐标点击不打开设置', state.dialog === false && state.sheetDisplay === 'none', state);
 
-  // ---------- 3. 375 compose 坐标点击发布 ----------
+  // ---------- 3. 长文折叠基线（t29 永久守门，独立计数） ----------
+  // A/final-spec.md §9：折叠态 6 行且可展开；展开态解除截断；详情页不折叠。
+  await goto('#/timeline', 375, 812, { clear: true });
+  await evaluate(`document.querySelector('[data-post-id="p_0007"]')?.scrollIntoView({ block: 'center' }); true`);
+  await sleep(250);
+  const longFold = await snap(`(() => {
+    const card = document.querySelector('[data-post-id="p_0007"]');
+    const text = card?.querySelector('[data-testid="post-text"]');
+    const button = card?.querySelector('[data-testid="expand-text"]');
+    if (!card || !text || !button) return null;
+    const cs = getComputedStyle(text);
+    return {
+      clamped: text.getAttribute('data-clamped'),
+      expanded: card.getAttribute('data-expanded'),
+      clientHeight: text.clientHeight,
+      scrollHeight: text.scrollHeight,
+      lineHeight: parseFloat(cs.lineHeight),
+      textLength: text.textContent.length,
+      buttonText: (button.textContent || '').trim(),
+    };
+  })()`);
+  const foldedOk = !!longFold && longFold.clamped === '6' && longFold.lineHeight > 0
+    && longFold.clientHeight === 6 * longFold.lineHeight && longFold.scrollHeight > longFold.clientHeight;
+  check('375 p_0007 折叠态为 6 行（scrollHeight > clientHeight）', foldedOk, longFold);
+  check('375 p_0007 折叠态有「展开全文」按钮', !!longFold && longFold.buttonText === '展开全文', longFold);
+
+  const expandClick = await clickSelector('[data-post-id="p_0007"] [data-testid="expand-text"]');
+  await sleep(350);
+  const longExpanded = await snap(`(() => {
+    const card = document.querySelector('[data-post-id="p_0007"]');
+    const text = card?.querySelector('[data-testid="post-text"]');
+    if (!card || !text) return null;
+    return {
+      expanded: card.getAttribute('data-expanded'),
+      clientHeight: text.clientHeight,
+      scrollHeight: text.scrollHeight,
+      textLength: text.textContent.length,
+    };
+  })()`);
+  const expandedOk = !!longExpanded && longExpanded.expanded === 'true'
+    && longExpanded.scrollHeight === longExpanded.clientHeight;
+  evidence.clamp = { longFold, expandClick, longExpanded };
+  check('375 p_0007 展开后 data-expanded=true 且解除截断', expandedOk, { longFold, expandClick, longExpanded });
+
+  await goto('#/status/p_0007', 375, 812, { clear: true });
+  const detailFold = await snap(`(() => ({
+    root: !!document.querySelector('[data-testid="detail-root"][data-status-id="p_0007"]'),
+    text: document.querySelector('[data-testid="detail-text"]')?.textContent?.length ?? 0,
+    clampedCount: document.querySelectorAll('[data-clamped]').length,
+  }))()`);
+  check('375 详情页 p_0007 不折叠（[data-clamped] 计数 0）', detailFold.root && detailFold.text > 0 && detailFold.clampedCount === 0, detailFold);
+
+  // ---------- 4. 375 compose 坐标点击发布 ----------
   await goto('#/compose', 375, 812, { clear: true });
   const inputRect = await rectOf('[data-testid="compose-input"]');
   const inputHit = await hitAt(inputRect.cx, inputRect.cy);

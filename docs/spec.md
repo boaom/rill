@@ -188,7 +188,7 @@
 
 ### 4.7.1 方向 A「日报」落地差异（D-1…D-6）
 
-A 的结构冲突为 0（作者行顺序、正文 6 行、1–9 图格、转发引用、计数行、回复均保留），以下 6 处是口径差异而非结构改写：
+A 的结构冲突为 0（作者行顺序、正文 6 行、1–9 图格、转发引用、计数行、回复均保留），以下 6 处是口径差异而非结构改写。编号沿用 final-spec 的 D-1…D-6，与 §3.2 的三处搬迁偏差不是同一组：
 
 | # | 原 spec | A 落地 | 处理 |
 | --- | --- | --- | --- |
@@ -197,7 +197,7 @@ A 的结构冲突为 0（作者行顺序、正文 6 行、1–9 图格、转发�
 | D-3 | 详情正文 15px / 1.5 | 详情长文 17px / 1.6 | 新增 `--rill-fs-detail: 17px` + `--rill-lh-detail: 1.6`，不降回 15/1.5 |
 | D-4 | 回复编号无规定（实现曾用强调色） | 编号用中性墨色 `--rill-text-3`，红只留给可点动作 | 补充规则「编号不得使用强调色」 |
 | D-5 | 认证无规定 | 昵称右 3px、13×13 方框 + 对勾、`currentColor`、`data-verified="true"` | 不合成字段；颜色跟随昵称，不用黄色/品牌色 |
-| D-6 | 详情页来源硬编码「来自 溪流」 | `post.source ?? '来自 溪流'`；时间线作者行与详情作者行**两处**都渲染 | 字段可选；`[data-source]` 文本必须等于源数据 |
+| D-6 | 详情页来源硬编码「来自 溪流」 | `displaySource(post.source)`：缺失/空 → **不渲染节点**；不以 `来自 ` 开头才补前缀；时间线作者行与详情作者行**两处**共用同一 helper | 字段可选；`[data-source]` 文本必须等于归一后的来源；空值节点不存在 |
 
 > D-2 的「折叠态图片」以 t25 后的 §6.1.1 为准；不要回退到 t22 的纯文字折叠。A 定稿的日期头条为 62px，1440 三栏为 300px / 640px / 260px。
 
@@ -431,7 +431,7 @@ export type Action =
 | 卡片 | 作者行（昵称/V/`@handle`/相对时间/来源，单行 22px）→ 正文（≤6 行截断）→ 图格（0–9）→ 转发块（若有）→ 计数行（转发/回复/赞） | `Post` + `Author` | 卡片 `post-card`（`data-post-id`、`data-author-id`、`data-repost-of`） |
 | 正文 | `[data-testid="post-text"]` 包住全文，用 CSS `-webkit-line-clamp: 6` 截断（**DOM 文本完整**），并带 `data-clamped="6"`；详情页同名区块**不带**该属性（AC-DT01 由此区分） | `Post.text` | `post-text` |
 | 读数条 | 375：两项（总条数 / 总图数），黑底白字；≥900 隐藏并移到右栏「今日读数」 | `timeline-root` 派生 | `statbar` |
-| 作者行扩展 | `author.verified === true` → 昵称右 3px 的 13×13 方框 + 对勾（`currentColor`、`data-verified="true"`、`aria-label="已认证"`）；`post.source` 非空 → 作者行最右 12px 灰字（`data-source`、`white-space:nowrap`、`margin-left:auto`） | `Author.verified?`、`Post.source?` | `data-verified`、`data-source` |
+| 作者行扩展 | `author.verified === true` → 昵称右 3px 的 13×13 方框 + 对勾（`currentColor`、`data-verified="true"`、`aria-label="已认证"`）；`displaySource(post.source)` 非空 → 作者行最右 12px 灰字（`data-source`、`white-space:nowrap`、`margin-left:auto`）；空值条件渲染为无节点 | `Author.verified?`、`Post.source?` | `data-verified`、`data-source` |
 | 相对时间 | `<time data-testid="post-time" datetime="ISO">`：<60s 刚刚 / <60m `n分钟前` / <24h `n小时前` / <7d `n天前` / 其余 `YYYY-MM-DD` | `createdAt` | `post-time` |
 | 计数行 | 三个按钮：转发 `repost-btn`、回复 `reply-btn`（跳到详情并聚焦输入框）、赞 `like-btn`；数字 `repost-count` / `reply-count` / `like-count` | `Counts` + INV-1/2/4 | 同上 |
 | 图格 | 纯 CSS 占位块（`hsl(hue 30% 62%)` + `alt` 文本），**不可点击**（大图查看属 P2）；容器带 `data-media-count="<n>"` | `MediaRef[]` | `media-grid` |
@@ -447,7 +447,7 @@ export type Action =
 | --- | --- | --- |
 | 长文折叠 | 卡片正文 `-webkit-line-clamp: 6` + `data-clamped="6"`；判据用 `scrollHeight > clientHeight`（不是字符数）；成立时渲染 `[data-testid="expand-text"]`「展开全文」；点击后仅本条去 clamp、按钮变「收起」、`data-expanded="true"`。详情不折叠（不带 `data-clamped`） | `[data-clamped="6"]` 存在；点击后 `data-expanded="true"` 且该条 `scrollHeight === clientHeight` |
 | 折叠态图片 | **限量而不是隐藏**：折叠态最多一行 3 张；短帖放得下（如 32 字 + 9 图）保持全量；展开态一律全量 3×3。段落间隙归零，避免 `clientHeight` 被撑大 | `p_0007` 折叠态 `[data-media-count="9"]`、`[data-count="3"]`；`p_0002` 短帖 `[data-count="9"]`；展开后 `[data-count="9"]` |
-| 认证与来源 | `verified === true` 时昵称右 3px 渲染 13×13 方框 + 对勾，颜色 `currentColor`、`data-verified="true"` + `aria-label="已认证"`；`source` 在作者行最右、12px、`--rill-text-3`、`data-source`、`white-space:nowrap`、`margin-left:auto`；来源为空则不渲染 | 方框 `getBoundingClientRect()` 宽高 = 13；`[data-source]` 文本 === mock 的 `source`；作者行高度 22px |
+| 认证与来源 | `verified === true` 时昵称右 3px 渲染 13×13 方框 + 对勾，颜色 `currentColor`、`data-verified="true"` + `aria-label="已认证"`；`source` 在作者行最右、12px、`--rill-text-3`、`data-source`、`white-space:nowrap`、`margin-left:auto`；来源为空则**节点不存在**；`来自 ` 前缀归一由 `src/lib/source.ts` 唯一实现 | 方框 `getBoundingClientRect()` 宽高 = 13；`[data-source]` 文本 === 归一后的 `source`；空值无 `[data-source]`；作者行高度 22px |
 
 ### 6.2 交互
 
@@ -497,7 +497,7 @@ export type Action =
 | 区块 | 内容 | testid |
 | --- | --- | --- |
 | 顶栏 | 返回按钮（`aria-label="返回"`）+ 标题「详情」 | `back-btn` |
-| 作者行 | 昵称 / 认证 / `@handle` / 时间 / 来源（`post.source ?? '来自 溪流'`），单行 22px | `detail-author` |
+| 作者行 | 昵称 / 认证 / `@handle` / 时间 / 来源（`displaySource(post.source)`；空则不渲染），单行 22px | `detail-author` |
 | 正文 | 完整正文（不截断），17px/1.6，`#话题#` chip 不可点 | `detail-text` |
 | 图格 | 同卡片规则，最大 9；**不可点击放大** | `detail-media` |
 | 转发原文 | 若 `repostOfId`：内嵌灰底卡片（原作者 + 原文 + 原图格），点击内嵌卡 → 跳到原帖详情（替换当前路由） | `repost-card` |

@@ -48,6 +48,13 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # 索引态护栏：test -f 只查磁盘，抓不到 `git rm --cached`（文件在磁盘但不在仓库）。
+      # 必须放在 Build 之后，dist/ 已存在；grep 是对产物中在线入口串的非恒真断言。
+      - name: Guard - 在线路由必须真的在仓库里
+        run: |
+          git ls-files --error-unmatch src/auth/LoginPage.tsx src/data/api.ts
+          grep -q 'login-input' dist/assets/*.js
+
       # node:test 零依赖；这一步依赖 Node 26 的 node:sqlite 与内置 test runner。
       # 只跑 server/test/*.mjs —— real-cookie-checklist.md 是给人看的联调清单，不是测试。
       - name: Server unit tests (node:test, 依赖 Node 26 的 node:sqlite)
@@ -104,9 +111,9 @@ jobs:
 
   # 单独成 job：Docker 慢，失败时不该拖住 build/checks 的结论。
   # 本机没有 docker，所以这一步只能在 runner 上验证 —— 不要在本地"假装构建过"。
-  # 已知风险（2026-11-16 静态核对）：Dockerfile 的 build 阶段没有 COPY server，
-  # 运行时阶段的 `COPY --from=build /app/server ./server` 会以 "not found" 失败 → 本 job 会红。
-  # 修复：build 阶段补一行 `COPY server ./server`（t17 的交付物，不在本次 CI 改动范围内）。
+  # 历史风险（已修复）：build 阶段曾缺 `COPY server ./server`，导致运行时阶段
+  # `COPY --from=build /app/server ./server` 以 "not found" 失败。修复见 commit e27174e；
+  # 该 commit 的 run 上本 job 已绿（docker build + 容器内 /api/health 200）。
   docker:
     name: docker build + container smoke
     runs-on: ubuntu-latest

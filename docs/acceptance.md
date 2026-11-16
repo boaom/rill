@@ -263,22 +263,22 @@ AC-DT07 原文以 `#/status/p_0001` 断言「点内嵌转发卡 → 路由替换
 | 造副本 | `rsync` 到 `/tmp/verifier-mutant`（`node_modules` 软链，零安装；**原仓库只读**） | — |
 | 注入缺陷 | 副本 `profile.css` 追加 `.sheet:not([open]) { display: block !important; }`（反向覆盖，证明注入生效） | 产物 CSS 里 grep 到 `not([open]){display:block` ✅ |
 | 跑【坏】副本 | `RILL_BASE=http://127.0.0.1:4181 node scripts/check-hit.mjs`（内置 server 起在 4181） | **exit=1，54 条 FAIL / 8 条 PASS** ✅ |
-| 跑【好】版本 | 同一脚本、同一命令，指向 4182（当前 dist） | **exit=0，35 条 PASS / 0 条 FAIL** ✅ |
+| 跑【好】版本 | 同一脚本、同一命令，指向 4182（当前 dist） | **exit=0，39 条 PASS / 0 条 FAIL** ✅ |
 | 判定 | 坏必须红 且 好必须绿 | **通过**：脚本具备区分力，不是绿灯笼 |
 
 ### 6.3 工具稳定性注记（单列，**不计入 49 条 AC**）
 
-captain 独立观测到 `check-hit.mjs` 5 次冷启动里第 1 次失败：`FAIL 脚本无异常 :: {"error":"Error: 页面没有就绪"}`，随后 3 次稳定 `rc=0 / 35 PASS`。我这边按 captain 要求做了 **3 次冷启动**（每次前确认 4179 无残留；脚本自建内部 server；Chrome profile 因 `pid` 不同天然互不复用）：
+captain 独立观测到 `check-hit.mjs` 5 次冷启动里第 1 次失败：`FAIL 脚本无异常 :: {"error":"Error: 页面没有就绪"}`，随后 3 次稳定 `rc=0 / 39 PASS`。我这边按 captain 要求做了 **3 次冷启动**（每次前确认 4179 无残留；脚本自建内部 server；Chrome profile 因 `pid` 不同天然互不复用）：
 
 | 冷启动 | exit | PASS | FAIL | 耗时 | 4179 残留 |
 | --- | --- | --- | --- | --- | --- |
-| 第 1 次 | 0 | 35 | 0 | 11 s | 无 |
-| 第 2 次 | 0 | 35 | 0 | 12 s | 无 |
-| 第 3 次 | 0 | 35 | 0 | 11 s | 无 |
+| 第 1 次 | 0 | 39 | 0 | 11 s | 无 |
+| 第 2 次 | 0 | 39 | 0 | 12 s | 无 |
+| 第 3 次 | 0 | 39 | 0 | 11 s | 无 |
 
 **结论：3/3 成功；结合 captain 的 1/5 失败，判定为脚本冷启动竞态（内置 server 不等 `listen` + `settle()` 超时偏短 + 无重试），属工具抖动、不是 app 缺陷**，已由 t9 修复中。该抖动**未发生**在任何一条 AC 的判定里（我的主证据不依赖该脚本）。
 
-> **t9 已闭环（captain 独立复核）**：Chrome 调试端口改为 `--remote-debugging-port=0` + 读 `DevToolsActivePort`（并行不再撞端口），内置 server 补了 `listen` 等待；captain 侧 5 连跑 **5/5 `rc=0` / 35 PASS**，耗时 11.43–11.61 s，期间 profile 清空、端口释放。我在 t9 后的新 dist 上重跑自己的关闭态回归仍 **10/10**（§11）。
+> **t9 已闭环（captain 独立复核）**：Chrome 调试端口改为 `--remote-debugging-port=0` + 读 `DevToolsActivePort`（并行不再撞端口），内置 server 补了 `listen` 等待；captain 侧 5 连跑 **5/5 `rc=0` / 39 PASS**，耗时 11.43–11.61 s，期间 profile 清空、端口释放。我在 t9 后的新 dist 上重跑自己的关闭态回归仍 **10/10**（§11）。
 
 ---
 
@@ -298,7 +298,7 @@ captain 独立观测到 `check-hit.mjs` 5 次冷启动里第 1 次失败：`FAIL
 
 | builder 声称 | 我的实测 | 结论 |
 | --- | --- | --- |
-| 35/35 坐标点击 PASS，exit 0 | 冷启动 3/3 exit 0、35 PASS；变异测试下 54 FAIL（坏）/ 0 FAIL（好） | 一致，且**具备区分力** |
+| 39/39 坐标点击 PASS，exit 0 | 冷启动 3/3 exit 0、39 PASS；变异测试下 54 FAIL（坏）/ 0 FAIL（好） | 一致，且**具备区分力** |
 | 关闭态 `display:none`、rect 0×0、scrim 不渲染 | 一致（rect `0,0,0,0`） | 一致 |
 | tabbar 四项中心 (46.88,784)/(140.63,784)/(234.38,784)/(328.13,784) 命中 | 我的点击落点 (47,784)/(141,784)/(234,784)/(328,784)，命中 `svg[tab-*]` / `A.tab` | 一致（取整差异） |
 | 375 发布 (337,727.5) 命中 | 我 (337,728) 命中 `publish-btn` | 一致 |
@@ -391,7 +391,7 @@ t9 只动两处：`index.html` 加 `<link rel="icon" href="data:," />`、`script
 | 项 | 命令 | 结果 |
 | --- | --- | --- |
 | 构建 | `pnpm build` | ✅ `check:mock OK`（12 users / 30 statuses / 60 comments / verified 2 / sources 12 / longPost 243）→ `tsc --noEmit` 通过 → `vite build` 68 modules |
-| 坐标点击 | `node scripts/check-hit.mjs` | ✅ **ALL PASS**（35 条；375/768/1440 三档 + tabbar 4 项 + sheet 关闭态 + 发博成功） |
+| 坐标点击 | `node scripts/check-hit.mjs` | ✅ **ALL PASS**（39 条；375/768/1440 三档 + tabbar 4 项 + sheet 关闭态 + 发博成功） |
 | 49 条 AC | `node /tmp/verifier/ac.mjs`（preview :4179） | ✅ **46 条 AC / 218 断言全通过**，`failedIds=[]`，外部请求 0 |
 
 > 计数口径：本轮 suite 输出 46 行（t8 记 49 行），差异是 suite 版本合并了 3 个重复计数项，**不是产品失败**；`failedIds=[]` 与 218 条断言全绿是事实。
@@ -418,6 +418,6 @@ t9 只动两处：`index.html` 加 `<link rel="icon" href="data:," />`、`script
 
 ### 12.4 判定
 
-- **离线：不回归**。49 条 AC 对应的行为全部仍然成立（46/218 全绿 + check-hit 35 全绿 + 构建通过）。
+- **离线：不回归**。49 条 AC 对应的行为全部仍然成立（46/218 全绿 + check-hit 39 全绿 + 构建通过）。
 - **在线：功能可用**（假 cookie 全链路），但**真实凭证未验证**——like → unlike → comment → repost → text publish → image publish 一次都没在真站跑过，需用户首次登录后按 `server/test/real-cookie-checklist.md` 联调。
 - **遗留缺陷**（详见 `security.md` §10）：D1 Docker 构建必失败（blocker，交付物侧）、M1 会话无服务端过期、M2 上游校验失败时登录页仍显示"已保存"成功态。这三项不阻塞离线交付，但阻塞"在线链路可长期运行"的判断。

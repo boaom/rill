@@ -5,6 +5,7 @@
 
 - 应用名：溪流 / Rill（`package.json` 里 `name: rill`、`version: 0.1.0`）
 - 状态：四条主线可用 + **49/49 无头验收通过**（逐条证据见 `docs/acceptance.md`）
+- 可选在线只读：登录页 `#/login` 粘贴浏览器 Cookie，时间线/详情/用户/搜索走本机 server 的微博只读接口；首次拿到真实 Cookie 后按 [`docs/weibo-verify-15min.md`](docs/weibo-verify-15min.md) 做 15 分钟联调。
 - 视觉唯一来源：`docs/design.md`（84 个 `--rill-*` token、7 个自制 inline SVG、§10 参考 CSS）
 - 结构/字段/testid 契约：`docs/spec.md`；功能裁剪依据：`docs/capability-inventory.md`
 
@@ -174,6 +175,9 @@ weibo-lite/
 | 作者分布 | `u_01`（当前用户）3 条；`u_02…u_09` 各 1 条（关注流 = 8）；`u_10/u_11/u_12` = 6/6/7 |
 | 配图分布 | 0 张 8 / 1 张 5 / 2 张 3 / 3 张 2 / 4 张 5 / 9 张 7（共 30） |
 | 转发 / 话题 | `repostOfId != null` 4 条（一层转发）；话题非空 6 条 |
+| 长文样本 | `p_0007` 正文 243 字（>140），带 3 处分段、1 个 `#城市散步#`、1 个 `@citywalk`、1 个 `t.cn` 短链；`topics` 与之对应（话题位从 `p_0008` 让过来，总数仍 6） |
+| 认证样本 | `verified` 布尔字段：**恰好 2 个 `true`** —— `u_05`（首卡 `p_0001` 作者「沉舟」）、`u_11`（长帖 `p_0007` 作者「摄影笔记」）；其余 10 个 `false`。`u_01` 是当前用户且未认证 |
+| 客户端尾巴 | `source` 字符串：每条动态必填、12 种取值（`来自 iPhone 15 Pro` / `来自 iPad Air` / `来自 网页版` / `来自 Mac` / `来自 小米 14` / `来自 Android 客户端` …），**按作者固定同一台设备**，与创作者风格一致 |
 | 回复分布 | 29 条动态各有回复，`p_0030` 0 回复（详情空态）；楼中楼 12 条，只一层 |
 | 时间 | `BASE = 1794801600000`；动态 `BASE - i*3600000 - (i*7919 % 1800000)`，严格倒序 |
 | 回复时间 | `post.createdAt + (k+1)*180000 + (j*7919 % 60000)`（晚于其动态） |
@@ -181,6 +185,9 @@ weibo-lite/
 | 随机性 | 固定 LCG（`SEED = 0x51ed5e01`）；**没有** `Math.random` / `Date.now` |
 | 配图 alt | 纯描述（如「灰蓝色天空」），**不含“占位”字样**；UI 只渲染色块 + 几何图标，不渲染任何文字标签 |
 | 可重复 | `gen:mock` 两次逐字节一致；`check:mock` 会把仓库 JSON 与生成器输出比对 |
+| 新增字段 | `Author.verified?: boolean`、`Post.source?: string`。mock 里**必有**（`check:mock` 强校验）；在线适配层/我发布的新内容可能缺省 → 读取侧写 `author.verified === true`，`source` 存在才显示、缺失不伪造；`来自 ` 前缀只由呈现层 `displaySource` 补。 |
+
+> `check:mock` 对上面三样都设了不变量：长帖 `text.length >= 140` 且含 `#…#` / `@handle` / `t.cn/`、分段存在、`topics` 与正文一致；`verified === true` 恰好 2 个且首卡作者与长帖作者都在其中；每条 `source` 非空、去空白、≤24 字、同作者固定、取值恰好 12 种。30 / 12 / 60 与全部旧分布（配图 / 转发 / 话题 / 楼中楼 / 回复）不变。
 
 ### 3.2 动作与选择器（`src/store.ts`）
 
@@ -272,10 +279,10 @@ reducer 动作：`like` / `unlike` / `repost` / `reply` / `publish` / `setDraft`
 | `pnpm check:mock` | 12/30/60；图分布 8/5/3/2/5/7；转发 4、话题 6、楼中楼 12、`p_0030` 0 回复 |
 | `pnpm preview` + curl 首页 | **200**，1.31 kB，含 `id="root"` |
 | CDP 行为回归脚本（`el.click()` 语义，仅回归） | **70 / 70 PASS**：四路由标题/高亮、点赞 +1→取消→再 +1（不累加）、发布后 21 条且首卡 `p_new_1`、我的统计/列表同步（3→4）、楼中楼展开收起、转发卡替换路由、重置后 20 条与统计 3、13 个探针全覆盖、加载更多 20→30、关注流 8、返回恢复滚动 900、空/错误态与重试、非法 id 不抛错。**注：此脚本用 `el.click()`，不能证明可点；命中验收以下一行 `check:ui` 为准。** |
-| 命中测试 `pnpm check:ui`（坐标点击 + `elementFromPoint`） | **35 / 35 PASS，exit 0**（成功输出逐项 `PASS 名称 :: 坐标/命中 tag` + 汇总）。375 tabbar 四项逐个命中（`svg`→`closest` 均为对应 tab）并真的切路由（timeline/compose/me/settings）；compose「发布」中心 (337,727.5) 命中 `publish-btn`，点击后 `#/timeline` post-count 20→21、首卡 `p_new_1`、正文为首条输入；768/1440 首卡 like 中心命中 `like-btn`，计数 5→6、`aria-pressed=true`，reply 中心命中 `reply-btn` 并进入详情；关闭态 `getComputedStyle(sheet).display === 'none'`、rect 0×0、scrim 不存在 |
+| 命中测试 `pnpm check:ui`（坐标点击 + `elementFromPoint`） | **39 / 39 PASS，exit 0**（成功输出逐项 `PASS 名称 :: 坐标/命中 tag` + 汇总）。375 tabbar 四项逐个命中（`svg`→`closest` 均为对应 tab）并真的切路由（timeline/compose/me/settings）；compose「发布」中心 (337,727.5) 命中 `publish-btn`，点击后 `#/timeline` post-count 20→21、首卡 `p_new_1`、正文为首条输入；768/1440 首卡 like 中心命中 `like-btn`，计数 5→6、`aria-pressed=true`，reply 中心命中 `reply-btn` 并进入详情；关闭态 `getComputedStyle(sheet).display === 'none'`、rect 0×0、scrim 不存在 |
 | 关闭态遮挡回归 | 原 sheet 区域 (187,700) 命中的是底层 `media-grid`（不是 `.sheet`），点击按底层语义进入详情；打开态记录「清空本地数据」坐标 (340,691.5) 后关闭再点同一坐标，`rill:v1:*` 8 个键（含测试标记）原样保留，未清空、未打开设置 |
 | 隐藏层不渲染 | 关闭态 `.sheet` display:none、无尺寸、无 scrim；375/768/1440 中央点均不命中 `.sheet` |
-| 冷启动 5 连跑（删 profile、无服务） | 5/5 `rc=0 / 35 PASS`（隔离端口 4324，动态 CDP 60661/60729/60807/60892/60939）：run1 11.61s、run2 11.46s、run3 11.43s、run4 11.46s、run5 11.43s（`elapsed`，wall 11.87/11.72/11.68/11.72/11.69s）；0 次 WARN/重试、0 FAIL、跑完 profile 目录清空、端口 4324 释放 |
+| 冷启动 5 连跑（删 profile、无服务） | 5/5 `rc=0 / 39 PASS`（隔离端口 4324，动态 CDP 60661/60729/60807/60892/60939）：run1 11.61s、run2 11.46s、run3 11.43s、run4 11.46s、run5 11.43s（`elapsed`，wall 11.87/11.72/11.68/11.72/11.69s）；0 次 WARN/重试、0 FAIL、跑完 profile 目录清空、端口 4324 释放 |
 | 375 无横向滚动 | `documentElement.scrollWidth = clientWidth = 375`，`#app.scrollWidth = 375`（四路由） |
 | 768 / 1440 | 无横向滚动；卡片左缘 80 / 416，右缘 688 / 1024 |
 | 几何抽查 | 顶栏 52、tabbar 56(+1 边)、段控件 40(+1)、**卡片首条通栏 375×355（355 是高，不是宽）**、卡片文本/操作行内容宽 **343**（左右 padding 16）、媒体区 **343×169.5**（2 列，单图格 169.5×169.5 + 4px gap）、头像 40/64、详情正文 17px/27.2、发博输入 168、工具条 56 且底部正好贴 tabbar（699–755）、sheet 375 贴底 / 768 宽 480 居中、开关 44×26、空态插图 160×120 |
@@ -319,7 +326,7 @@ CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" pnpm r
 - **为什么必须提交 lockfile**：CI 用 `pnpm install --frozen-lockfile`，`pnpm-lock.yaml` 与 `package.json` 不一致会直接失败。改了依赖（包括 `pnpm add/remove` 或手工改 `package.json`）后，必须本地 `pnpm install` 并提交更新后的 `pnpm-lock.yaml`；不要只提交 `package.json`。
 - **不要跑 `gen:mock`**：CI 只跑只读的 `pnpm run check:mock`（它校验 `src/data/mock.json` 与确定性生成器逐字节一致，不写文件）。`gen:mock` 会改写数据文件，只在本地需要重生成时跑。
 - **CHROME_BIN**：GitHub 的 `ubuntu-latest` 自带 Google Chrome（`/usr/bin/google-chrome`）；若换 runner 或本地路径不同，用 `CHROME_BIN` 指向可执行文件。显式指定无效时脚本会直接报尝试路径并失败，不会偷偷回退。
-- **无浏览器时**：仅在你确认环境无法安装 Chrome 时用 `CHECK_UI_SKIP=1`（打印 SKIP、exit 0）；CI 默认不设，必须真实跑 35 条坐标断言。超时默认 120s，慢机可把 `CHECK_UI_TIMEOUT_MS` 调大。
+- **无浏览器时**：仅在你确认环境无法安装 Chrome 时用 `CHECK_UI_SKIP=1`（打印 SKIP、exit 0）；CI 默认不设，必须真实跑 39 条坐标断言。超时默认 120s，慢机可把 `CHECK_UI_TIMEOUT_MS` 调大。
 - `test-results/`、`*.tsbuildinfo`、`.vite/` 已加入 `.gitignore`；`node_modules/`、`dist/`、`.npm-cache/`、`.pnpm-store/` 也不会进仓库。
 
 ---

@@ -213,11 +213,44 @@ function authorIdOf(user) {
   return /^u_/.test(raw) ? raw : `u${raw}`;
 }
 
+/**
+ * 认证位映射：优先 `verified`，其次 `verified_type`。
+ * 只有明确认证才返回 true；缺字段/0/false/-1 一律返回 undefined（不伪造未认证，
+ * 也不把“没证据”写成 false）。前端按 `=== true` 显示 V。
+ * 依据：docs/weibo-api.md §3.4 的 userInfo 字段（verified, verified_type）。
+ */
+function verifiedFromUser(user) {
+  const direct = user?.verified;
+  if (direct !== undefined && direct !== null && direct !== '') {
+    return direct === true || direct === 1 || direct === '1' || direct === 'true' ? true : undefined;
+  }
+  const type = user?.verified_type ?? user?.verifiedType;
+  if (type === undefined || type === null || type === '') return undefined;
+  const numeric = Number(type);
+  return Number.isFinite(numeric) && numeric >= 0 ? true : undefined;
+}
+
+/**
+ * 上游 source/from 是 HTML（`<a href=...>iPhone客户端</a>`）。
+ * 取纯文本、去标签、解实体、折叠空白，并截到 24 个 Unicode 码点；
+ * 不做“来自 溪流”兜底（C1：缺省即不渲染尾巴，呈现层负责加前缀）。
+ */
+function sourceFromMblog(mblog) {
+  const raw = mblog?.source ?? mblog?.from;
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  let text = cleanText(raw);
+  // cleanText 已解 &amp;；这里再剥掉残留的标签/实体符号，保证响应里没有 <>&。
+  text = text.replace(/[<>]/g, '').replace(/&/g, '').replace(/\s+/g, ' ').trim();
+  if (!text) return undefined;
+  return Array.from(text).slice(0, 24).join('');
+}
+
 function authorFromUser(user, currentUid) {
   const rawId = String(user?.idstr ?? user?.id ?? '').trim();
   const id = authorIdOf(user);
   const screenName = String(user?.screen_name ?? user?.screenName ?? '').trim();
   const avatarText = Array.from(screenName).slice(0, 2).join('') || (rawId ? rawId.slice(-2) : '?');
+  const verified = verifiedFromUser(user);
   return {
     id,
     nickname: screenName || (rawId ? `用户${rawId}` : '未知用户'),
@@ -229,6 +262,7 @@ function authorFromUser(user, currentUid) {
     followerCount: Number(user?.followers_count ?? 0) || 0,
     postCount: Number(user?.statuses_count ?? 0) || 0,
     isCurrentUser: Boolean(currentUid && rawId && String(currentUid) === rawId),
+    ...(verified === true ? { verified: true } : {}),
   };
 }
 
@@ -260,7 +294,10 @@ function mblogListFromCards(payload) {
 export class WeiboProvider {
   constructor({ cookies = {}, uid = null, fetchImpl = globalThis.fetch, baseUrl = BASE, cache = sharedCache, timeoutMs = TIMEOUT_MS } = {}) {
     this.name = 'weibo';
-    this.capabilities = { read: true, write: false, images: false };
+    // 读接口已按契约实现；写方法（like/repost/comment/publish）已在 t19 接通，
+    // 但 m 站写端点仍属【待实测】。capabilities.write 如实标记为 true；若真实
+    // cookie 实测证伪，按 docs/weibo-api.md §8 降级为只读并更新此处与 README。
+    this.capabilities = { read: true, write: true, images: false };
     this.cookies = { ...(cookies || {}) };
     this.uid = uid ? String(uid) : null;
     this.baseUrl = String(baseUrl || BASE).replace(/\/+$/, '');
@@ -697,10 +734,12 @@ export class WeiboProvider {
     const text = await this._textFor(mblog);
     const id = idOf(mblog);
     if (!id) return null;
+    const source = sourceFromMblog(mblog);
     return {
       id,
       authorId: authorIdOf(user),
       text,
+      ...(source ? { source } : {}),
       media: mediaFromMblog(mblog),
       topics: topicsFromText(text),
       repostOfId: retweeted ? (idOf(retweeted) || null) : null,

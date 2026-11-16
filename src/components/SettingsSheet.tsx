@@ -9,12 +9,20 @@ export function SettingsSheet({
   onToggleTheme,
   onReset,
   onClose,
+  online = false,
+  accountName = '',
+  onLogin,
+  onLogout,
 }: {
   open: boolean;
   theme: ThemeMode;
   onToggleTheme: () => void;
   onReset: () => void;
   onClose: () => void;
+  online?: boolean;
+  accountName?: string;
+  onLogin?: () => void;
+  onLogout?: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [confirming, setConfirming] = useState(false);
@@ -54,6 +62,22 @@ export function SettingsSheet({
           </button>
         </div>
         <div className="sheet__body">
+          <div className="sheet__row" data-testid="account-row">
+            <span className="sheet__label">
+              账号
+              <span className="sheet__note">{online ? (accountName || '已登录') : '离线模式，未连接微博'}</span>
+            </span>
+            {online ? (
+              <button type="button" className="sheet__danger" data-testid="settings-logout" onClick={onLogout}>
+                退出
+              </button>
+            ) : (
+              <button type="button" className="btn btn--ghost" data-testid="settings-login" onClick={onLogin}>
+                登录
+              </button>
+            )}
+          </div>
+
           <div className="sheet__row">
             <span className="sheet__label">
               深色模式
