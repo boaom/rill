@@ -19,3 +19,9 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Capacitor / Android generated outputs（android/.gitignore 也覆盖）
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/public/

@@ -875,6 +875,10 @@ snap 1440,900 /tmp/shot-timeline-1440.png "$BASE/#/timeline"
 
 ---
 
+### 16.3 依赖策略偏差记录（t33 Android 壳）
+
+`AC-G12` 的运行时依赖仍严格是 `react` + `react-dom` 两项。t33 为构建可安装的 Android APK，仅在 **devDependencies** 增加 `@capacitor/core`、`@capacitor/cli`、`@capacitor/android`；应用代码不 import `@capacitor/core`，不把 Capacitor 运行时打进 web 主包。`capacitor.config.ts` 只被 CLI 读取，`android/` 是原生壳工程。后续 t35 的原生分支也只允许动态 `import()` 并在 `window.Capacitor?.isNativePlatform?.()` 为真时加载，不能改变 `AC-G12` 的 web 口径。
+
 ## 16. 风险与实现顺序（给 builder）
 
 ### 16.1 顺序（每步都可独立验收）

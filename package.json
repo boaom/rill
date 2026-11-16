@@ -15,13 +15,18 @@
     "test:write": "node --test server/test/write-ops.mjs",
     "check:online": "node scripts/check-online-writes.mjs",
     "server": "node server/index.mjs",
-    "dev:full": "node server/dev-full.mjs"
+    "dev:full": "node server/dev-full.mjs",
+    "cap:sync": "pnpm build && npx cap sync android",
+    "apk:debug": "node -e \"console.error('apk:debug 需要 JDK/Android SDK；本机未安装，请在 GitHub Actions 的 android.yml 中构建（不要本地安装 SDK）'); process.exit(1)\""
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
