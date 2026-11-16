@@ -196,7 +196,7 @@ export function OnlineDetailPage({
             if (authLike(error)) onLogin();
             else window.location.reload();
           }}
-          testid={authLike(error) ? 'auth-error' : error.code === 'RISK_CONTROL' ? 'risk-error' : 'error-state'}
+          testid={authLike(error) ? 'auth-error' : 'error-state'}
         />
       ) : status ? (
         <>
