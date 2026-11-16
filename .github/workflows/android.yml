@@ -72,7 +72,7 @@ jobs:
           {
             echo '## Android debug APK evidence'
             echo '```text'
-            "$AAPT2" dump badging "$APK" | grep -E '^(package|sdkVersion|targetSdkVersion|uses-permission|application-label:|launchable-activity)' | head -n 15
+            "$AAPT2" dump badging "$APK" | grep -E '^(package|minSdkVersion|sdkVersion|targetSdkVersion|uses-permission|application-label:|launchable-activity)' | head -n 15
             echo '```'
             echo '### Web assets / dex present'
             echo '```text'
