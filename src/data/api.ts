@@ -81,6 +81,13 @@ export function isAuthError(error: unknown): boolean {
   return error instanceof ApiError && (error.code === 'AUTH_EXPIRED' || error.code === 'AUTH_REQUIRED');
 }
 
+/** 时间线 / 搜索 / 详情三处共用同一份 RISK_CONTROL 文案；不要各自复制改写。 */
+export const RISK_CONTROL_COPY = {
+  title: '触发了风控',
+  text: '微博要求人工验证；稍后再试，或换网络。',
+  action: '重试',
+} as const;
+
 const PAGE_SIZE = 20;
 let csrfToken: string | null = null;
 

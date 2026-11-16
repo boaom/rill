@@ -5,7 +5,7 @@ import { PostCard } from '../components/PostCard';
 import { Segment } from '../components/Segment';
 import { WriteSheet } from '../components/WriteSheet';
 import { getAuthor } from '../data/mock';
-import { ApiError, commentStatus, getTimeline, repostStatus, setLike, writeErrorMessage, type Page, type SessionInfo } from '../data/api';
+import { ApiError, RISK_CONTROL_COPY, commentStatus, getTimeline, repostStatus, setLike, writeErrorMessage, type Page, type SessionInfo } from '../data/api';
 import type { Author, FeedTab, Post } from '../types';
 
 function readableError(error: ApiError): { title: string; text: string; action: string; auth: boolean } {
@@ -13,7 +13,7 @@ function readableError(error: ApiError): { title: string; text: string; action: 
     return { title: '需要重新登录', text: 'Cookie 可能已过期或被吊销；重新粘贴后继续。', action: '去登录', auth: true };
   }
   if (error.code === 'RATE_LIMITED') return { title: '操作太快了', text: '微博限流了，等一分钟再试。', action: '重试', auth: false };
-  if (error.code === 'RISK_CONTROL') return { title: '触发了风控', text: '微博要求人工验证；稍后再试，或换网络。', action: '重试', auth: false };
+  if (error.code === 'RISK_CONTROL') return { ...RISK_CONTROL_COPY, auth: false };
   return { title: '内容没有加载出来', text: '检查本机 server、网络与 Cookie 后再试。', action: '重试', auth: false };
 }
 

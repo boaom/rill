@@ -168,9 +168,9 @@ t6 我给的方案 A 就是这一条；builder 未采用 `showModal`（保留自
 | **AC-G06** | 真 375 无横向滚动 + 卡片 ≥320 | ✅ 通过 | innerWidth=375、clientWidth=375、`scrollWidth<=clientWidth`；首卡 w=375（通栏，见 X-4）；四路由 375 下均无横向溢出 | [CDP] |
 | **AC-G07** | 768/1440 640 列居中 | ✅ 通过 | 768：列宽 640，左右留白 64/64，首卡 left=80 w=608；1440：列宽 640，左右留白 400/400，首卡 left=416 w=608；两宽度 `scrollWidth<=clientWidth` | [CDP] |
 | **AC-G08** | 键盘可达 + 焦点可见 | ✅ 通过 | Tab 序列命中 `back-btn → repost-btn → reply-btn → like-btn → … → tab-timeline → tab-compose → tab-me → tab-settings`；like-btn 聚焦时 `outline: solid 2px`、`matches(:focus-visible)=true` | [CDP] |
-| **AC-G09** | 产物无网络 API 与外链 | ✅ 通过 | `dist/assets/*.js` 中 `fetch(`=0、`XMLHttpRequest`=0、`WebSocket`=0；`index.html`/`dist/index.html` 外链 `http(s)://` 资源=0（仅相对 `./assets/`）；630 个运行期请求全部同源 | [静态] |
+| **AC-G09** | 离线运行时不发起外部请求（**口径已于 t30 收窄**） | ✅ 通过（新口径） | **旧口径作废**：「`dist/assets/*.js` 中 `fetch(`=0」与双模式设计直接冲突（在线数据层 `src/data/api.ts:114` 必有 1 处 `fetch`），产物里出现 fetch 字面量不等于发起网络请求。**新判据＝运行时证据**：CDP `Network.requestWillBeSent` 抓离线（`RILL_PROVIDER=mock`）五页（timeline/status/compose/me/search），断言 ①所有请求 origin 仅 self（`externalOrigins=[]`）②离线路径不调用在线取数接口（`/api/(timeline|feed|status|comments|search|user|container|write|statuses)` 命中 0）。实测：timeline 5 个请求 = `/` + 2 个产物 + `/api/config` + `/api/session`，其余四页 0 请求 | [CDP] |
 | **AC-G10** | 错误/空态下 runtime-errors 恒 0 | ✅ 通过 | 4 路由 + 4 个 error/empty 探针共 8 次加载，每次 `data-runtime-errors="0"`；全程 `Runtime.exceptionThrown`/`console.error` 计数 **0** | [CDP] |
-| **AC-G11** | 禁用串 0 命中 | ✅ 通过 | `grep -rni -e unique -e 微博 -e weibo -e sina src index.html dist \| grep -v 'weibo-lite/' \| wc -l` → **0** | [静态] |
+| **AC-G11** | 原 app 标识 0 命中（**口径已于 t30 收窄**） | ✅ 通过（新口径） | **旧口径作废**（且原命令结构性恒 0，见 §15 修订记录）：禁 `微博/weibo/sina` 与产品已自我定义为微博第三方客户端相矛盾。**新判据**：禁原 app 标识 `\bUnique\b`、`app.unique.one`、`sina`；**允许** `微博`/`Weibo`/`weibo`。新命令 `grep -rnE 'app\.unique\.one\|\bUnique\b\|sina' src server index.html dist` → **0**；词边界自检：`asUniqueUsers` 不命中、独立 `Unique` 命中。注入反证见 §15 修订记录 | [静态] |
 | **AC-G12** | 运行时依赖恰 2 项 | ✅ 通过 | `dependencies` = `{"react":"^18.3.1","react-dom":"^18.3.1"}`（恰 2 项）；devDeps 仅 @types/react、@types/react-dom、@vitejs/plugin-react、typescript、vite | [静态] |
 | **AC-G13** | 探针回显 | ✅ 通过 | 13/13 探针 `data-probe-applied` 与 URL 上的 `probe` 串逐字相等 | [CDP]+[dump] |
 
@@ -421,3 +421,36 @@ t9 只动两处：`index.html` 加 `<link rel="icon" href="data:," />`、`script
 - **离线：不回归**。49 条 AC 对应的行为全部仍然成立（46/218 全绿 + check-hit 39 全绿 + 构建通过）。
 - **在线：功能可用**（假 cookie 全链路），但**真实凭证未验证**——like → unlike → comment → repost → text publish → image publish 一次都没在真站跑过，需用户首次登录后按 `server/test/real-cookie-checklist.md` 联调。
 - **遗留缺陷**（详见 `security.md` §10）：D1 Docker 构建必失败（blocker，交付物侧）、M1 会话无服务端过期、M2 上游校验失败时登录页仍显示"已保存"成功态。这三项不阻塞离线交付，但阻塞"在线链路可长期运行"的判断。
+
+---
+
+## 15. 修订记录（t30）：禁用串自检曾结构性恒 0（假绿），已修
+
+**发现（t24）**：原命令
+
+```
+grep -rni -e unique -e 微博 -e weibo -e sina weibo-lite/src weibo-lite/index.html weibo-lite/dist | grep -v 'weibo-lite/' | wc -l   → 0
+```
+
+**恒为 0，与仓库内容无关**：`grep -r` 输出的每一行都以路径 `weibo-lite/...` 开头，因此 `| grep -v 'weibo-lite/'` 会把**所有行**滤掉。这条 0 长期被当作 AC-G11 的通过证据引用——它从来不是证据，是命令写错造成的假绿。按内容统计（`grep -rhoiE 'unique|微博|weibo|sina' src server index.html dist | wc -l`）在冻结树上的真实命中是 **230**（`微博` 71 / `weibo` 61 / `WEIBO` 53 / `Weibo` 41 / 含 `Unique` 的标识 4）。
+
+**修法（两步）**：
+
+1. **口径**（captain t30 裁定）：禁用串收窄为「原 app 标识」——`app.unique.one`、独立词 `Unique`、`sina` 域名类；**允许** `微博`/`Weibo`/`weibo`（本产品就是微博第三方客户端，登录页必须说明是微博账号）。AC-G09 同步收窄为运行时口径（见上表）。
+2. **命令**：去掉会导致全滤的 `grep -v`，改为按内容计数、加词边界避免误伤普通英文标识：
+
+```
+grep -rnE 'app\.unique\.one|\bUnique\b|sina' src server index.html dist | wc -l    # 期望 0
+```
+
+**反证（证明它不再是恒真检查）**：在冻结树 `f410745` 的干净 clone 里，逐条注入-撤销三组违规样本：
+
+| 注入内容（写入 `src/probe.ts` 末尾） | 命令输出 | 撤销后 |
+| --- | --- | --- |
+| `// forbidden-brand probe: see app.unique.one for reference` | **1** | **0** |
+| `const BRAND = 'Unique';` | **1** | **0** |
+| `const UPSTREAM = 'https://api.sina.com.cn';` | **1** | **0** |
+
+三次注入都从 0 变 1、撤销即回 0 ⇒ 命令对「品牌标识」这一谓词**不再恒真**。
+
+**仍待同步（不在 t30 范围）**：`docs/spec.md:847`（§15 原始命令）与 `docs/capability-map.md:15`、`:119` 仍写着被滤掉的那条命令与旧口径，需要随 spec 版本一起改；本文件与 `docs/acceptance-a.md` 已按新口径记录。

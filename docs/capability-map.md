@@ -12,7 +12,7 @@
 | --- | --- | --- | --- |
 | C-1 | **未复用任何代码** | 交付物里无 `.smali` / `.dex` / `.jar` / `.java`；`import` 只允许相对路径 + `react` | ✅ `find src dist` 命中 0；`import` 外部来源仅 `react`(7 处) / `react-dom/client`(1 处) |
 | C-2 | **未复用任何资源** | 无二进制资源文件；CSS 里无 `url()` 引用 | ✅ `find src dist -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.gif' -o -name '*.svg' -o -name '*.woff*' -o -name '*.ttf' -o -name '*.otf' -o -name '*.mp4' -o -name '*.so' -o -name '*.dex' -o -name '*.jar'` → **0**；`grep -c 'url(' src/styles/*.css` → **0**；图标是 `icons.tsx` 里 7 个自绘 inline SVG 组件 + 空态插图 |
-| C-3 | **未复用任何文案** | 禁用串全量 grep（大小写不敏感） | ✅ `grep -rni -e unique -e 微博 -e weibo -e sina src index.html dist \| grep -v 'weibo-lite/' \| wc -l` → **0**；页面文案全部新写（如「这里还没有内容」「发一条，溪流就有水了」） |
+| C-3 | **未复用任何文案** | 禁用串全量 grep（词边界） | ✅ `grep -rnE 'app\.unique\.one|\bUnique\b|sina' src server index.html dist | wc -l` → **0**（期望 0）；页面文案全部新写（如「这里还没有内容」「发一条，溪流就有水了」）。**允许 `微博`/`Weibo`**（产品是微博第三方客户端，禁它会让登录页文案自相矛盾）。⚠️ 旧命令 `… \| grep -v 'weibo-lite/' \| wc -l` 恒为 0 是**命令写错**（`grep -r` 每行都以 `weibo-lite/` 开头，被全滤），旧口径真实命中 **230**（微博 71 / weibo 61 / WEIBO 53 / Weibo 41 / Unique 标识 4） |
 | C-4 | **未联网、未申请任何系统能力** | 产物无网络 API；无浏览器系统能力调用 | ✅ `dist/assets/*.js` 中 `fetch(`=0 / `XMLHttpRequest`=0 / `WebSocket`=0；`src` 中 `Notification`/`serviceWorker`/`geolocation`/`getUserMedia`/`mediaDevices` = 0；运行期 630 个请求 **全部同源**（`http://127.0.0.1:4179/`），外部请求 0 |
 
 > 顺带说明一个容易误报的点：`dist` 里能 grep 到 4 次 `clipboardData`，那是 **React DOM 自带**合成事件插件的属性名（`src` 里 0 次），不是我们的代码在调用剪贴板——判定时请用 `grep src` 的口径。
@@ -116,7 +116,7 @@
 ```bash
 cd .
 # 1) 复用性/红线自检（全部期望 0）
-grep -rni -e unique -e 微博 -e weibo -e sina src index.html dist | grep -v 'weibo-lite/' | wc -l      # 0
+grep -rnE 'app\.unique\.one|\bUnique\b|sina' src server index.html dist | wc -l   # 0（词边界；允许 微博/Weibo）
 find src dist -name '*.so' -o -name '*.png' -o -name '*.dex' -o -name '*.jar' | wc -l                # 0
 for p in 'fetch(' XMLHttpRequest WebSocket; do grep -o -F "$p" dist/assets/*.js | wc -l; done         # 0 0 0
 grep -rn "Notification\|serviceWorker\|geolocation\|getUserMedia\|<video\|window.open" src | wc -l    # 0

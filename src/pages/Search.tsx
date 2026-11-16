@@ -3,7 +3,7 @@ import { AccountChip } from '../components/AccountChip';
 import { EmptyState } from '../components/EmptyState';
 import { PostCard } from '../components/PostCard';
 import { getAuthor } from '../data/mock';
-import { ApiError, searchPosts, setLike, writeErrorMessage, type SessionInfo } from '../data/api';
+import { ApiError, RISK_CONTROL_COPY, searchPosts, setLike, writeErrorMessage, type SessionInfo } from '../data/api';
 import type { Author, Post } from '../types';
 
 function errorState(error: ApiError): { title: string; text: string; action?: string } {
@@ -11,7 +11,7 @@ function errorState(error: ApiError): { title: string; text: string; action?: st
     return { title: '需要重新登录', text: 'Cookie 可能已过期；重新粘贴后即可继续搜索。', action: '去登录' };
   }
   if (error.code === 'RATE_LIMITED') return { title: '操作太快了', text: '微博限流了，等一会儿再试。', action: '重试' };
-  if (error.code === 'RISK_CONTROL') return { title: '触发了风控', text: '微博要求人工验证，稍后再试或换网络。', action: '重试' };
+  if (error.code === 'RISK_CONTROL') return { ...RISK_CONTROL_COPY };
   return { title: '搜索没有加载出来', text: '检查本机 server 与网络后再试。', action: '重试' };
 }
 

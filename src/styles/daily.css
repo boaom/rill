@@ -133,7 +133,7 @@ body { background: var(--rill-bg); color: var(--rill-text); }
 .vm {
   flex: none; display: inline-grid; place-items: center;
   width: var(--rill-vm-size); height: var(--rill-vm-size);
-  margin-left: 3px; border: 1px solid currentColor; border-radius: 0;
+  border: 1px solid currentColor; border-radius: 0;
   color: currentColor; font-size: 10px; line-height: 1; font-weight: var(--rill-fw-semibold);
 }
 

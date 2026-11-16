@@ -780,6 +780,30 @@ export type Action =
 | AC-G12 | `package.json` 运行时依赖 = `react`、`react-dom` 两项（devDeps 仅 vite/typescript 相关）；无 UI 库/图标库/字体包 | 精确 2 |
 | AC-G13 | `#app[data-probe-applied]` 在带 `probe=` 访问时等于该探针串（证明钩子存在，防止「探针参数被忽略但仍通过」） | 相等 |
 
+### 13.1 A 定稿新增 AC（t28 沉淀，AC 表 49 → 57 行）
+
+**为什么有这一节**：A「日报」落地带来了 `§4.7.1` 的 6 处口径差异（D-1…D-6）和长文折叠/图片限量规则（`§6.1.1`、`ui-proposals/A/final-spec.md §9`、t25）。这些**在原来的 49 行 AC 里没有对应行** —— 旧表按关键词（展开/折叠/认证/尾巴/限量/暗色）只能命中 `AC-DT06`（楼中楼折叠）、`AC-PF06`（主题持久化）、`AC-G04`（主题切换）三条，它们验的是别的东西。所以「49 行全绿」只证明**没回归**，不证明**新设计落地了**。
+
+t24 用 S1–S8 这 8 条补充断言单独证明了新设计，本节把它们**沉淀成正式 AC**：此后 57 行全绿 = 回归 + 新设计都成立。**既有 49 行的判据一个字没改**（这一点由 `git diff` 可复核：本节的改动只有新增）。
+
+- 编号规则：`AC-LT*` = 长文/图文形态（Long Text）；`AC-VF*` = A 的视觉规则（Verified/尾巴/读数条/编号/对比度）。
+- 「实测基线」一列是 **t24 在冻结提交 `f410745` 上量到的真实数字**，不是设计目标值。二者不一致时**以实测为准并显式标注偏差**（见 `AC-VF01` 的 O1）。
+- 复验方式统一是 `node scripts/check-hit.mjs`（39 条里已并入折叠基线）+ `/tmp/verifier/t24/*.mjs` 的 CDP 度量脚本；新增行的脚本模板见各行的「复验方式」。
+
+| 编号 · 标题 | 判据（可机械复验） | 实测基线（t24，`f410745`） | 复验方式 | 来源 |
+| --- | --- | --- | --- | --- |
+| **AC-LT01** 长文折叠为 6 行 + `展开全文` 只影响本条 | ①折叠态卡 `[data-clamped="6"]` 且 `clientHeight === 6 × lineHeight`；②`scrollHeight > clientHeight`（**不设字符数阈值**）；③`展开全文` 命中区 ≥44×44，`elementFromPoint` 在按钮四角+中心三点均命中按钮自身；④点击后**仅该卡** `data-expanded="true"` 且 `scrollHeight === clientHeight`，同页其它卡仍是折叠态 | `p_0007`：`clientHeight 168 = 6 × 28`、`scrollHeight 252`；展开后 `392 = 14 × 28`；按钮 **48×44**，三点命中自身 | `node scripts/check-hit.mjs`（4 条独立断言，clamp 6→5 变异反证过）；`/tmp/verifier/t24/probe-fold.mjs` | `§6.1.1`；`final-spec §9`「长文折叠」；`§4.7.1 D-2` |
+| **AC-LT02** 折叠态图片限量 ≤3、展开态全量、短帖不一刀切 | ①长文折叠态图格 `nShown ≤ 3`；②同一卡展开态 `nShown === 该帖 media 数` 且为 3×3 全量、无裁切；③**短帖臂**：正文放得下（无 `展开全文` 节点）的带图帖，折叠态必须显示**全部**图片，不得只给 3 张 | `p_0007` 折叠 **3** / 展开 **9**；短帖 `p_0002`(28 字)、`p_0008`(27 字)、`p_0011`(29 字) 折叠态均 **9 张全量**且无 expand 节点 | `/tmp/verifier/t24/probe-s.mjs`（逐卡 `nShown` 计数 + 是否有 expand 节点） | `§6.1.1`；`final-spec §9`「折叠态图片」；t25（取代 t22 的「折叠态不渲染图格」） |
+| **AC-LT03** 详情长文 17px / 1.6 且不折叠 | ①详情正文 `fontSize === 17px`、`lineHeight === 27.2px`（1.6）；②该页 `[data-clamped]` 计数 **0**；③`scrollHeight === clientHeight`（未截断）；④`--rill-fs-detail` 在 computed style 里真实生效（不许靠行内 17px 蒙混） | 17px / 27.2px；`[data-clamped]` **0**；`scrollH === clientH` | `/tmp/verifier/t24/probe-detail-tail.mjs` | `§4.7.1 D-3`；`final-spec §11 D-3`；`§7.1` |
+| **AC-VF01** 认证标识 13×13 / 跟随昵称色 / 昵称右 3px | ①方框 `getBoundingClientRect()` 宽高均 **13**；②`fill`/`color` 计算值 === 昵称的计算色（`currentColor`，**不得**为黄/品牌色）；③`[data-verified="true"]` 存在且 `aria-label` 非空；④暗色下仍可见（对比度 ≥4.5）；⑤**昵称与 V 的间距 = 3px** | 13×13 ✓；`currentColor === 昵称色` ✓；`data-verified` ✓；暗色可见 ✓；**间距 6px ≠ 3px（偏差 O1，本行未通过）**；`aria-label` t24 未单列，待复验（不写假值） | `/tmp/verifier/t24/probe-s.mjs` 取 `getBoundingClientRect` 与 `getComputedStyle` | `§4.7.1 D-5`；`final-spec §11 D-5` |
+| **AC-VF02** 客户端尾巴两处渲染且无硬编码兜底 | ①时间线作者行与详情作者行**两处**都有 `[data-source]`；②`[data-source]` 文本 === `displaySource(post.source)` 归一结果；③`source` 缺失/空 → **该节点不存在**（`count === 0`）；④不以「来自 」开头时补前缀、已带前缀不重复；⑤`src/` 里**不得**再有硬编码的「来自 溪流」 | 三臂成立（原样 / 补「来自 」 / 缺失不渲染）；`来自 溪流` **0 命中（含注释）**；单一 helper `src/lib/source.ts` 两处共用 | `grep -rn '来自 溪流' src \| wc -l` → 0；`/tmp/verifier/t24/probe-s.mjs` 三臂 | `§4.7.1 D-6`；`final-spec §11 D-6`；t21（`Post.source?: string` 可选） |
+| **AC-VF03** 读数条断点行为（375 两项 / 1440 移右栏） | ①375 下 `.statbar` 只有**两项**（「30 条」「100 图」），无「人」「回复」；②1440 下 feed 内 `.statbar` **不可见**（`getClientRects().length === 0`），读数出现在右栏 `.side--stats` | 375：两项 ✓；1440：`.side--stats` `x=1060 w=260`，feed 内不可见 ✓ | `/tmp/verifier/t24/probe-wide.mjs`（1440 量 x/w + `getClientRects`） | `§4.7.1 D-1`；`final-spec §11 D-1` |
+| **AC-VF04** 回复编号用中性墨色 | `.reply__n` 的 `getComputedStyle().color` === `--rill-text-3` 的计算值，**且 !== `--rill-accent` 的计算值** | `.reply__n` = `rgb(103,104,95)` = `#67685F` = `--rill-text-3` ✓ | `/tmp/verifier/t24/probe-s7.mjs` | `§4.7.1 D-4`；`final-spec §11 D-4` |
+| **AC-VF05** 亮/暗两主题对比度底线 | 亮色与暗色各取三处文字（正文/次级/提示），计算对比度**均 ≥4.5:1**；暗色全节点扫描中 `<4.5` 命中数 **0** | 亮 **5.642** / 暗 **5.677**（compose 暗 **4.712**）≥4.5；暗色 **292 节点**扫描 `<4.5` 命中 **0** | `/tmp/verifier/t24/dark-audit.mjs`（逐节点对比度扫描） | `AC-PF06`/`AC-G04` 只验主题切换，不验对比度；本条补 `final-spec §1.1` 的暗色变量 |
+
+> **AC-VF01 目前是红的**：设计值 3px、实现 6px（t24 记为偏差 O1）。按纪律不写松判据去迁就实现，也不把 6px 冒充成通过 —— 该行要么在 **t31** 修到 3px（作者行 `column-gap:3px` 与 `.card__name` 的 `margin-left:3px` 叠加是实测根因），要么由 captain 改 `§4.7.1 D-5` 的设计值为 6px（二选一，不许悬空）。**修复后必须重新复验本行**。
+
+
 ---
 
 ## 14. 无头验收方法（本机已验证的环境事实）
@@ -844,7 +868,9 @@ snap 1440,900 /tmp/shot-timeline-1440.png "$BASE/#/timeline"
 | 自检范围 | `weibo-lite/src/`（全部文件）、`weibo-lite/index.html`、`weibo-lite/dist/`（构建产物）、运行时可见 DOM 文本 |
 | 禁用串 | `Unique`、`unique`、`微博`、`Weibo`、`weibo`、`sina`、`app.unique.one`、`sinaweibo`（大小写不敏感全匹配） |
 | 例外 | 工作目录名 `weibo-lite/` 与本文档（`docs/*.md`）不在自检范围：目录名与文档是「分析对象」的一部分，且真实 URL 里必然含该路径 |
-| 命令 | `grep -rni -e unique -e 微博 -e weibo -e sina weibo-lite/src weibo-lite/index.html weibo-lite/dist \| grep -v 'weibo-lite/' \| wc -l` → 期望 `0`（用多个 `-e` 而不是正则竖线，避免表格里出现裸竖线） |
+| 命令 | `grep -rnE 'app\.unique\.one|\bUnique\b|sina' src server index.html dist | wc -l` → 期望 `0` |
+| 旧命令（**已废弃，勿再引用**） | `grep -rni -e unique -e 微博 -e weibo -e sina … \| grep -v 'weibo-lite/' \| wc -l` → 恒为 `0`，但**这个 0 不证明任何事**：`grep -r` 每行输出都以路径 `weibo-lite/…` 开头，紧跟的 `\| grep -v 'weibo-lite/'` 把它们全部滤掉，所以它结构性恒 0。旧口径在冻结树上的**真实命中是 230**（`微博` 71 / `weibo` 61 / `WEIBO` 53 / `Weibo` 41 / 含 `Unique` 标识 4）—— 这个数字应当保留，它说明当年那个 0 掩盖了多少东西 |
+| 口径说明 | **允许 `微博` / `Weibo`**：产品定位是微博第三方客户端，禁「微博」会让登录页与免责文案自相矛盾。禁的只有上游品牌标识 `app.unique.one`、独立单词 `Unique`（词边界，`asUniqueUsers` 这类不命中）与 `sina` |
 | 正面替代 | 产品名「溪流」、包名 `app.rill`、storage 前缀 `rill:`、CSS 变量前缀 `--rill-` |
 
 ---
@@ -878,7 +904,7 @@ snap 1440,900 /tmp/shot-timeline-1440.png "$BASE/#/timeline"
 | 检查 | 方法 | 结果 |
 | --- | --- | --- |
 | 章节齐全（4 屏 + 全局 + 非目标 + 验收） | 标题匹配 12 个必备章节 | **12/12 存在** |
-| 每个交互都有验收点 | 正则抽全部 `IA-*` 与 `AC-*`，双向覆盖（§10 矩阵 ⟷ 各页定义表） | **45 个交互（TL 11 / DT 7 / CP 10 / PF 6 / 全局 11）/ 49 条验收点，双向零缺口**；无 IA 缺 AC，无幽灵 AC |
+| 每个交互都有验收点 | 正则抽全部 `IA-*` 与 `AC-*`，双向覆盖（§10 矩阵 ⟷ 各页定义表） | **45 个交互（TL 11 / DT 7 / CP 10 / PF 6 / 全局 11）/ 49 条验收点（+ t28 新增 8 条 = **57**，见 §13.1；新增行不带 IA，属「设计落地」类而非「交互」类，矩阵仍双向零缺口）**；无 IA 缺 AC，无幽灵 AC |
 | 每页 ≥3 条验收点 | 计数 | **TL 12 / DT 8 / CP 9 / PF 7 / 全局 13**（全部 ≥3） |
 | 非目标与 T0 P2 一致 | N-1…N-8 逐条比对 T0 §4 P2 A–F | **A–F 全部覆盖**，另加 N-1（账号/网络/API/多语言）与 N-8（captain 锁定的 6 项） |
 | 探针与断言闭环 | §4.6 声明的 13 个探针逐个检查是否被验收引用 | **13/13 被引用** |

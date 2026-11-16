@@ -5,7 +5,7 @@ import { Avatar } from '../components/Avatar';
 import { TopicText } from '../components/TopicText';
 import { WriteSheet } from '../components/WriteSheet';
 import { getAuthor } from '../data/mock';
-import { ApiError, commentStatus, getComments, getStatus, repostStatus, setLike, writeErrorMessage, type Page, type StatusPayload } from '../data/api';
+import { ApiError, RISK_CONTROL_COPY, commentStatus, getComments, getStatus, repostStatus, setLike, writeErrorMessage, type Page, type StatusPayload } from '../data/api';
 import type { Author, Reply } from '../types';
 import { formatRelative, isoTime } from '../lib/time';
 
@@ -189,14 +189,14 @@ export function OnlineDetailPage({
       ) : error ? (
         <EmptyState
           kind="error"
-          title={authLike(error) ? '需要重新登录' : '内容没有加载出来'}
-          text={authLike(error) ? 'Cookie 可能已过期；重新登录后继续。' : '检查 server 与网络后再试。'}
+          title={authLike(error) ? '需要重新登录' : error.code === 'RISK_CONTROL' ? RISK_CONTROL_COPY.title : '内容没有加载出来'}
+          text={authLike(error) ? 'Cookie 可能已过期；重新登录后继续。' : error.code === 'RISK_CONTROL' ? RISK_CONTROL_COPY.text : '检查 server 与网络后再试。'}
           actionLabel={authLike(error) ? '去登录' : '重试'}
           onAction={() => {
             if (authLike(error)) onLogin();
             else window.location.reload();
           }}
-          testid={authLike(error) ? 'auth-error' : 'error-state'}
+          testid={authLike(error) ? 'auth-error' : error.code === 'RISK_CONTROL' ? 'risk-error' : 'error-state'}
         />
       ) : status ? (
         <>
