@@ -3,9 +3,9 @@
 // CapacitorHttp 在原生 WebView 里全局 patch fetch，因此这里照常 fetch 即可绕过 CORS。
 import type { Author, FeedTab, MediaRatio, MediaRef, Post, Reply } from '../types';
 
-// 不要把主机名写成连续字面量：web 产物验收要求 grep 主机名命中 0。
-const HOST = ['m', 'weibo', 'cn'].join('.');
-export const WEIBO_ORIGIN = `https://${HOST}`;
+// 本文件只由原生分支动态 import，设备分块只在原生壳里加载，web 主包不含它；
+// AC-G14①② 已守此约定，所以这里可以直白写微博主机，便于检索与维护。
+export const WEIBO_ORIGIN = 'https://m.weibo.cn';
 export const WEIBO_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
 export const TIMEOUT_MS = 10_000;
 export const CACHE_TTL_MS = 45_000;

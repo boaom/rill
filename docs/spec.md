@@ -885,6 +885,8 @@ snap 1440,900 /tmp/shot-timeline-1440.png "$BASE/#/timeline"
 
 **三种 API 模式**：`src/data/api.ts` 的 `ApiMode = 'offline' | 'backend' | 'device'`。选择规则：原生壳 → `device`；普通浏览器且 server/provider 已认证 → `backend`；其余 → `offline`。页面只通过 `getTimeline` / `getStatus` / `getComments` / `getUser` / `getUserPosts` / `search` 的同一返回结构取数，模式由 `App` 传入；页面代码没有第二种数据结构。原生分支不把 Cookie 发到 server，登录校验通过后只写入设备本地（Preferences 优先，localStorage 兜底，键 `rill:v1:device-cookies`）；登录页明确写“Cookie 只保存在这台设备，不写日志、不上报；等同账号凭证，别外传”，并在设备模式给出“电脑浏览器登录 m.weibo.cn → F12 → Application → Cookies → 复制 SUB/SUBP → 传到手机”的备用指引。
 
+**登录方式（t37）**：设备模式提供两条入口，手动粘贴始终作为兜底保留。主入口是 App 内登录：`WeiboLoginPlugin`（Java，`MainActivity` 注册）启动 `WeiboLoginActivity`，在普通 WebView 中加载 `https://m.weibo.cn/login`，由用户自己完成登录；页面顶部“我已登录完成”是明确动作，只有点击后插件才调用 `CookieManager.getInstance().getCookie("https://m.weibo.cn")`，通过 `readCookies()` 返回 Cookie 字符串。JS 侧 `src/device/login-native.ts` 只动态 import，拿到字符串后复用现有 `parseCookieInput` 解析、`loginWithCookies` → `src/device/session.ts` 校验与存储，不新写解析或存储。插件不存在、抛错、用户取消或 Cookie 不完整时，登录页显示可读错误并保留手动粘贴输入，不白屏。原生 Activity 在 Manifest 中 `android:exported="false"`；不新增权限，沿用已有 `INTERNET`；设备直连不监听本地端口，也不需要 server 端口。Cookie 只在内存与设备本地存储中流转，Java/JS 都不打印 Cookie 值。真机安装、真实账号登录无法在本环境验证，CI 只能证明插件编译通过与错误分支可用。t37 构建 `index-DOAv0mww.js = 248,457 B`，较 t31 基线 `246,156 B` 增量 **+2,301 B**（新门槛 ≤2,560 B，余量 259 B）。
+
 **写安全**：设备写请求带 `Idempotency-Key`/本地幂等缓存，失败**不自动重试**；本地分钟桶限制写频率。`like`/`comment` 对应的 m 站端点是**未实测**的私有接口，提供 `setUnverifiedWritesEnabled(false)` 一键降级为只读并返回 `READ_ONLY`（UI 映射为不可用提示）；`setDeviceWritesEnabled(false)` 关闭全部设备写。真实微博的读/写**没有**在本环境用真实账号做端到端验证；`scripts/check-device-direct.mjs` 只证明“代码路径 + 假上游响应”可跑通，不能证明真站可用。
 
 ## 16. 风险与实现顺序（给 builder）

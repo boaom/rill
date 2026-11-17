@@ -195,7 +195,7 @@ async function main() {
     await cdp.send('Page.enable');
     await cdp.send('Runtime.enable');
     const stub = `
-      window.Capacitor = { isNativePlatform: () => true, Plugins: {} };
+      window.Capacitor = { isNativePlatform: () => true, Plugins: { WeiboLogin: { openLogin: () => Promise.reject({ code: 'UNAVAILABLE', message: 'stub unavailable' }) } } };
       window.__deviceCalls = [];
       const __realFetch = window.fetch.bind(window);
       window.fetch = (input, init = {}) => {
@@ -214,6 +214,16 @@ async function main() {
     if (!await cdp.waitFor("document.body.innerText.includes('F12') && document.body.innerText.includes('m.weibo.cn')", 5000)) throw new Error('设备登录指引未显示');
     const initial = await cdp.eval("({ device: window.Capacitor.isNativePlatform(), route: document.querySelector('[data-testid=login-root]')?.getAttribute('data-online') })");
     if (!initial.device) throw new Error('Capacitor stub 未生效');
+    // 错误分支 1：插件存在但抛错；页面必须显示可读提示，手动粘贴仍可用。
+    await cdp.eval("document.querySelector('[data-testid=login-native]').click()");
+    if (!await cdp.waitFor("document.querySelector('[data-testid=login-native-error]')", 5000)) throw new Error('插件报错未显示 fallback');
+    const fallback1 = await cdp.eval("({ text: document.querySelector('[data-testid=login-native-error]')?.textContent || '', manual: Boolean(document.querySelector('[data-testid=login-input]')?.offsetParent) })");
+    if (!fallback1.text.includes('手动粘贴') || !fallback1.manual) throw new Error(`插件报错 fallback 不可用: ${JSON.stringify(fallback1)}`);
+    // 错误分支 2：插件不存在；不能白屏，手动入口仍要在。
+    await cdp.eval("delete window.Capacitor.Plugins.WeiboLogin; document.querySelector('[data-testid=login-native]').click()");
+    if (!await cdp.waitFor("document.querySelector('[data-testid=login-native-error]')?.textContent.includes('未找到原生插件')", 5000)) throw new Error('插件缺失未显示明确回退');
+    const fallback2 = await cdp.eval("({ text: document.querySelector('[data-testid=login-native-error]')?.textContent || '', manual: Boolean(document.querySelector('[data-testid=login-input]')?.offsetParent), root: Boolean(document.querySelector('[data-testid=login-root]')) })");
+    if (!fallback2.manual || !fallback2.root) throw new Error(`插件缺失白屏: ${JSON.stringify(fallback2)}`);
     await cdp.eval(`(() => {
       const input = document.querySelector('[data-testid=login-input]');
       const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;

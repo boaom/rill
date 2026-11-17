@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { loginWithCookies, parseCookieInput, ApiError, type SessionInfo } from '../data/api';
+import type { NativeCookie } from './NativeLogin';
+
+const NativeLogin = lazy(() => import('./NativeLogin').then((module) => ({ default: module.NativeLogin })));
 
 /** #/login：只支持浏览器复制 cookie，不提供账密/短信登录（微博新设备会二次验证）。 */
 export function LoginPage({
@@ -28,12 +31,12 @@ export function LoginPage({
     return () => window.clearTimeout(timer);
   }, [done, onBack]);
 
-  const submit = async () => {
-    if (parsed.cookies.length === 0 || busy) return;
+  const connect = async (cookies: NativeCookie[]) => {
+    if (cookies.length === 0 || busy) return;
     setBusy(true);
     setError('');
     try {
-      const next = await loginWithCookies(parsed.cookies);
+      const next = await loginWithCookies(cookies);
       setDone(next);
       // 未通过微博校验时不把 hasSession 当成已认证写回 App；留在失败态，
       // 由用户选择重新粘贴或明确以离线模式继续。
@@ -52,6 +55,8 @@ export function LoginPage({
     }
   };
 
+  const submit = () => void connect(parsed.cookies);
+
   return (
     <section data-testid="login-root" data-online={online ? 'true' : 'false'}>
       <header className="rill-header">
@@ -61,7 +66,7 @@ export function LoginPage({
           </button>
           <h1 className="rill-header__title">登录</h1>
           <span className="rill-header__spacer" />
-          <span className="header__hint">{online ? '在线' : '本机'}</span>
+          <span className="header__hint">{device ? '设备直连' : online ? '在线' : '本机'}</span>
         </div>
       </header>
 
@@ -77,8 +82,14 @@ export function LoginPage({
           Cookie 只保存在这台设备，不写日志、不上报；等同账号凭证，别外传。
         </div>
 
+        {device ? (
+          <Suspense fallback={null}>
+            <NativeLogin onLogin={connect} />
+          </Suspense>
+        ) : null}
+
         <label className="auth__label" htmlFor="cookie-input">
-          Cookie
+          {device ? '手动粘贴 Cookie（备用）' : 'Cookie'}
         </label>
         <textarea
           id="cookie-input"
