@@ -774,13 +774,17 @@ export type Action =
 | AC-G06 | 375×812：`scrollWidth <= clientWidth`（无横向滚动），卡片宽度 ≥ 320 | 成立 |
 | AC-G07 | 768 / 1440：内容列 `max-width: 640px` 居中（`getBoundingClientRect` 左右留白相等），仍无横向滚动 | 成立 |
 | AC-G08 | 键盘：`Tab` 可依次到达 tabbar 4 项与首卡 like 按钮，`:focus-visible` 有可见描边 | 成立 |
-| AC-G09 | `dist/assets/*.js` 中 `fetch(`/`XMLHttpRequest`/`WebSocket` 命中数为 0；`index.html` 无外链 `http(s)://` 资源 | 0 命中 |
+| AC-G09 | **运行时级（t38 收窄）**：离线模式（`provider=mock`）下 CDP 抓包，外部 origin 集合 `externalOrigins.length === 0`；同一次抓包里 `#app[data-runtime-errors="0"]`（与 AC-G10 同轮取证） | 精确 0 |
+| AC-G14 | **产物级（t38 新增，t40 修③）**：①主包 `dist/assets/index-*.js` 中 Capacitor **实现**符号命中 0（`CapacitorHttp` / `registerPlugin` / `registerWebPlugin` / `CapacitorCookies` / `CapacitorException` / `CAPACITOR_`）；②主包中 `Capacitor` 字符串**只允许**平台探测这一次（命中 = 1，且其后 40 字符内含 `isNativePlatform`）；③**主包**（`dist/assets/index-*.js`）中无以微博主机为 base 的请求（`fetch(` 实参 / `XHR.open` 的 URL 里不出现 `weibo.` 主机，正则命中 0）；③b**设备分块**（`dist/assets/client-*.js`）**允许**出现微博主机 —— 那是它的职责，**不得**要求它隐藏主机名（会逼出拼接伪装，见 §13.2.1）；但必须满足两条隔离约束（**对全部按需分块成立**，不止 `client-*`）：**ⓐ主包对分块的引用只有动态 `import()`**（`from"./client-…"` = 0；反向 `from"./index-…"` 允许，那是分块引用主包的共享依赖），**ⓑ分块只在原生分支加载**（主包内两个 `import()` 的调用点外层守卫是 `window.Capacitor?.isNativePlatform?.()` 为真）；④`index.html` 无外链 `http(s)://` 资源（0） | ①0×6；②1 且上下文 `window.Capacitor?.isNativePlatform?.()`；③主包 0；③b ⓐ主包静态 `from` 0 / 动态 `import()` **2**（client + NativeLogin）；分块→主包静态 3（共享依赖，允许）、NativeLogin→login-native 动态 1；ⓑ两个调用点外层均 `if(aa())`，`aa() = !!window.Capacitor?.isNativePlatform?.()`；④0 |
+| AC-G15 | **构建体积增量（t38 新增）**：主包 `dist/assets/index-*.js` 相对 t31 基线 `index-BDudWUes.js = 246,156 B` 的增量 ≤ **2,560 B**（2.5 KB，1 KB=1024 B）；且**每次构建必须在 §13.2 的记录表里写一行**（日期 / commit / 产出文件名 / 字节数 / 增量 / 剩余余量），只报「没超」不记录视为不通过 | 当前 `index-D4zQu_1e.js = 248,175 B`，增量 **+2,019 B**，余量 **541 B** |
 | AC-G10 | 4 条路由 + 4 个错误/空态探针下，`#app[data-runtime-errors="0"]` | 恒 0 |
 | AC-G11 | 禁用串自检（§15）：`src/`、`index.html`、`dist/` 中禁用串命中数 0 | 0 |
 | AC-G12 | `package.json` 运行时依赖 = `react`、`react-dom` 两项（devDeps 仅 vite/typescript 相关）；无 UI 库/图标库/字体包 | 精确 2 |
 | AC-G13 | `#app[data-probe-applied]` 在带 `probe=` 访问时等于该探针串（证明钩子存在，防止「探针参数被忽略但仍通过」） | 相等 |
 
 ### 13.1 A 定稿新增 AC（t28 沉淀，AC 表 49 → 57 行）
+
+> **行数变更**：49 行（初版）→ **57 行**（t28 沉淀 A 的 S1–S8）→ **59 行**（t38 新增 `AC-G14` 产物级、`AC-G15` 体积门槛；同日 `AC-G09` 由字面符号判据收窄为运行时抓包，见 §13.2）。
 
 **为什么有这一节**：A「日报」落地带来了 `§4.7.1` 的 6 处口径差异（D-1…D-6）和长文折叠/图片限量规则（`§6.1.1`、`ui-proposals/A/final-spec.md §9`、t25）。这些**在原来的 49 行 AC 里没有对应行** —— 旧表按关键词（展开/折叠/认证/尾巴/限量/暗色）只能命中 `AC-DT06`（楼中楼折叠）、`AC-PF06`（主题持久化）、`AC-G04`（主题切换）三条，它们验的是别的东西。所以「49 行全绿」只证明**没回归**，不证明**新设计落地了**。
 
@@ -800,6 +804,59 @@ t24 用 S1–S8 这 8 条补充断言单独证明了新设计，本节把它们*
 | **AC-VF03** 读数条断点行为（375 两项 / 1440 移右栏） | ①375 下 `.statbar` 只有**两项**（「30 条」「100 图」），无「人」「回复」；②1440 下 feed 内 `.statbar` **不可见**（`getClientRects().length === 0`），读数出现在右栏 `.side--stats` | 375：两项 ✓；1440：`.side--stats` `x=1060 w=260`，feed 内不可见 ✓ | `/tmp/verifier/t24/probe-wide.mjs`（1440 量 x/w + `getClientRects`） | `§4.7.1 D-1`；`final-spec §11 D-1` |
 | **AC-VF04** 回复编号用中性墨色 | `.reply__n` 的 `getComputedStyle().color` === `--rill-text-3` 的计算值，**且 !== `--rill-accent` 的计算值** | `.reply__n` = `rgb(103,104,95)` = `#67685F` = `--rill-text-3` ✓ | `/tmp/verifier/t24/probe-s7.mjs` | `§4.7.1 D-4`；`final-spec §11 D-4` |
 | **AC-VF05** 亮/暗两主题对比度底线 | 亮色与暗色各取三处文字（正文/次级/提示），计算对比度**均 ≥4.5:1**；暗色全节点扫描中 `<4.5` 命中数 **0** | 亮 **5.642** / 暗 **5.677**（compose 暗 **4.712**）≥4.5；暗色 **292 节点**扫描 `<4.5` 命中 **0** | `/tmp/verifier/t24/dark-audit.mjs`（逐节点对比度扫描） | `AC-PF06`/`AC-G04` 只验主题切换，不验对比度；本条补 `final-spec §1.1` 的暗色变量 |
+
+### 13.2 AC-G09 的收窄与体积门槛（t38）
+
+`AC-G09` 原来的字面判据是「`dist/assets/*.js` 中 `fetch(` / `XMLHttpRequest` / `WebSocket` 命中数为 0」。**这条从写下的当天就是错的** —— t36 复核时它在 t31 基线上已经等于 1（主包 backend 取数那处）。它不是被 t34 弄坏的，是判据本身没表达出真正想表达的东西：想让离线模式**不发起外部请求**，却用「产物里不能出现 `fetch` 字样」来验。
+
+**旧口径（已废弃，勿再引用）**
+
+| 废弃的判据 | 为什么废 |
+| --- | --- |
+| `dist/assets/*.js` 中 `fetch(` / `XMLHttpRequest` / `WebSocket` 命中数 = 0 | ① **会漏**：设备分块取数的主机是拼出来的 —— `src/device/weibo-direct.ts:8` 的 `const HOST = ['m','weibo','cn'].join('.')`（这段代码本身就是这条判据逼出来的伪装，见 §13.2.1 例 3）然后 `` `https://${Z}` ``，字面搜 `m.weibo.cn` 一个都搜不到；② **会误伤**：主包里有 2 处 `m.weibo.cn` 全是**界面文案**（搜索提示「内容来自微博（m.weibo.cn）」、登录指引「在浏览器打开 m.weibo.cn」），按旧判据会把正确文案判成违规；③ **和「有没有发请求」不是同一件事**：`fetch(` 出现在代码里不等于运行时会调用，不出现也不等于没网（XHR、`sendBeacon`、动态拼串都能绕过） |
+
+**t34 的教训（写进 spec 当反面例子）**：判据别拿**字符串出现**去代理**行为**。要么验产物结构（符号级），要么验运行时抓包；两者都要，只做一边必然一边假绿。
+
+**收窄后的两条**（已入 §13 表）：
+
+- **AC-G09 运行时级**：离线模式下 CDP 抓包 `externalOrigins.length === 0`。这是行为层，t30 / t36 都实测过（离线抓包外部 origin = []，timeline 仅 5 个同源请求，其余四页 0 请求）。
+- **AC-G14 产物级**：符号级 + URL 级（t40 又修过一次 ③，见 §13.2.1/§13.2.2）。注意 `grep -ci 'capacitor'` 也**不能**直接写成 0 —— 主包里有 1 处 `window.Capacitor?.isNativePlatform?.()`（原生分支探测，设计允许），所以判据写成「实现符号 0 + 探测串只允许 1 次且必须邻接 `isNativePlatform`」。实测：`CapacitorHttp`/`registerPlugin`/`registerWebPlugin`/`CapacitorCookies`/`CapacitorException`/`CAPACITOR_` 全部 **0**；**主包**内以微博主机为 base 的 `fetch(` / `XHR.open` **0**（设备分块允许，按 ③b 的隔离约束验）。
+
+**体积门槛**（t36 F3）：旧门槛 `<2 KiB` 下，t34 实测 +2,019 B **只剩 29 B 余量**，下一个无关增补就会误报失败。改为 **≤2,560 B（2.5 KB）**，并**强制逐次记录实际增量** —— 门槛值可以调，「这次到底涨了多少」不能靠嘴说。
+
+| 日期 | commit / 场景 | 产出文件 | 字节 | 增量 | 剩余余量 |
+| --- | --- | --- | --- | --- | --- |
+| t31 基线 | 冻结基线 | `index-BDudWUes.js` | 246,156 | — | 2,560 |
+| t34 / t36 | 设备直连分块并入 | `index-D4zQu_1e.js` | 248,175 | **+2,019** | **541** |
+| 2026-11-17 | `531b08b`（t37 App 内登录 WebView + HOST 去伪装） | `index-DOAv0mww.js` | 248,457 | **+2,301** | **259** |
+| （待续） | 下一次 `pnpm run build` 必须在此续写一行 —— 只报「没超」不写数字视为未验 | — | — | — | — |
+
+> 记录规则：每次 `pnpm run build` 后把主包字节数与增量补一行；**只写「通过」不写数字，视为未验**。`client-*.js`（设备分块，当前 21,797 B；清单见 §16.4）不计入主包增量门槛，但要在同一行备注它的大小变化 —— 否则「主包没涨」可能是把代码挪进了分块。
+
+#### 13.2.1 原则：判据不得逼出伪装代码（t40）
+
+验一条要求前，先问一句：**诚实的实现能不能自然地满足它？** 如果只能靠拆串、拼接、删掉用户可见文案、注释掉断言来满足，那**判据写错了** —— 正确做法是改判据并把这次教训记下来，而不是让代码变脏。
+
+本轮被自己的判据教育了三次，三次都有代码为证：
+
+| 错判据 | 它逼出了什么 | 正确写法 |
+| --- | --- | --- |
+| `grep 'm.weibo.cn' = 0`（产物里不许出现该域名） | 会删掉用户可见的操作指引（「在浏览器打开 m.weibo.cn 并登录…」）—— 真实产品必须有这句话 | 只禁**作为请求 base**：`fetch(`/`XHR.open` 的 URL 里不许出现 `weibo.` 主机；界面文案**允许** |
+| `grep -ci 'capacitor' = 0`（主包不许出现 Capacitor 字样） | 主包确实有 1 处合法的平台探测 `window.Capacitor?.isNativePlatform?.()`，为满足字样为 0 就得把它写丑 | 禁**实现符号**（`CapacitorHttp`/`registerPlugin`/…），探测串显式允许 1 次且必须邻接 `isNativePlatform` |
+| `AC-G14③` 覆盖「主包**与设备分块**都不许有微博主机」 | `src/device/weibo-direct.ts:7-8` 真的写了 `const HOST = ['m','weibo','cn'].join('.')`，还附注释「web 产物验收要求 grep 主机名命中 0」—— 判据直接把代码逼脏了 | ③ 收窄到**仅主包**；③b 显式**允许**设备分块出现主机，改用「主包无静态引用 + 只在原生分支动态加载」判隔离 |
+
+第 3 条是最贵的一课：**判据一旦覆盖了"本来就该那样做"的分块，就只剩两种结局 —— 代码变脏，或者判据恒红**。而且伪装代码会让 `grep` 类排查彻底失效：后来人搜 `m.weibo.cn` 找不到 `weibo-direct.ts`，等于把一处本该一眼可见的事实藏了起来。
+
+#### 13.2.2 AC-G14③ 的第二次收窄（t40）
+
+t38 写的是「主包与设备分块中都无微博主机 base」，方向对但**范围错了**：设备分块存在的唯一理由就是请求微博主机。t40 按真实意图（**防止 web 用户误触直连**）改成两条可验的隔离约束：
+
+- **③ 主包**：`dist/assets/index-*.js` 内 `fetch(`/`XHR.open` 的 URL 不出现 `weibo.` 主机。实测 **0**。
+- **③b 设备分块**：`dist/assets/client-*.js` 允许出现微博主机，但
+  - ⓐ 主包对它**无静态引用**：`grep -oE 'from"\./client-[^"]+"'` = **0**；只有动态 `import("./client-B05abvGR.js")` = **1**；
+  - ⓑ 该动态 import 的调用点**只在原生分支**：主包内上下文为 `async function Ke(){return v0(()=>import("./client-…"))}`，调用它的 `Hu()` 外层是 `if(aa())`，而 `aa() = !!window.Capacitor?.isNativePlatform?.()`。
+
+> 这三条合起来才真正表达「web 主包不碰直连」：不发请求（③）+ 不带进来（③bⓐ）+ 带进来也只在原生壳里加载（③bⓑ）。
 
 > **AC-VF01 目前是红的**：设计值 3px、实现 6px（t24 记为偏差 O1）。按纪律不写松判据去迁就实现，也不把 6px 冒充成通过 —— 该行要么在 **t31** 修到 3px（作者行 `column-gap:3px` 与 `.card__name` 的 `margin-left:3px` 叠加是实测根因），要么由 captain 改 `§4.7.1 D-5` 的设计值为 6px（二选一，不许悬空）。**修复后必须重新复验本行**。
 
@@ -885,9 +942,11 @@ snap 1440,900 /tmp/shot-timeline-1440.png "$BASE/#/timeline"
 
 **三种 API 模式**：`src/data/api.ts` 的 `ApiMode = 'offline' | 'backend' | 'device'`。选择规则：原生壳 → `device`；普通浏览器且 server/provider 已认证 → `backend`；其余 → `offline`。页面只通过 `getTimeline` / `getStatus` / `getComments` / `getUser` / `getUserPosts` / `search` 的同一返回结构取数，模式由 `App` 传入；页面代码没有第二种数据结构。原生分支不把 Cookie 发到 server，登录校验通过后只写入设备本地（Preferences 优先，localStorage 兜底，键 `rill:v1:device-cookies`）；登录页明确写“Cookie 只保存在这台设备，不写日志、不上报；等同账号凭证，别外传”，并在设备模式给出“电脑浏览器登录 m.weibo.cn → F12 → Application → Cookies → 复制 SUB/SUBP → 传到手机”的备用指引。
 
-**登录方式（t37）**：设备模式提供两条入口，手动粘贴始终作为兜底保留。主入口是 App 内登录：`WeiboLoginPlugin`（Java，`MainActivity` 注册）启动 `WeiboLoginActivity`，在普通 WebView 中加载 `https://m.weibo.cn/login`，由用户自己完成登录；页面顶部“我已登录完成”是明确动作，只有点击后插件才调用 `CookieManager.getInstance().getCookie("https://m.weibo.cn")`，通过 `readCookies()` 返回 Cookie 字符串。JS 侧 `src/device/login-native.ts` 只动态 import，拿到字符串后复用现有 `parseCookieInput` 解析、`loginWithCookies` → `src/device/session.ts` 校验与存储，不新写解析或存储。插件不存在、抛错、用户取消或 Cookie 不完整时，登录页显示可读错误并保留手动粘贴输入，不白屏。原生 Activity 在 Manifest 中 `android:exported="false"`；不新增权限，沿用已有 `INTERNET`；设备直连不监听本地端口，也不需要 server 端口。Cookie 只在内存与设备本地存储中流转，Java/JS 都不打印 Cookie 值。真机安装、真实账号登录无法在本环境验证，CI 只能证明插件编译通过与错误分支可用。t37 构建 `index-DOAv0mww.js = 248,457 B`，较 t31 基线 `246,156 B` 增量 **+2,301 B**（新门槛 ≤2,560 B，余量 259 B）。
+**登录方式（t37）**：设备模式提供两条入口，手动粘贴始终作为兜底保留。主入口是 App 内登录：`WeiboLoginPlugin`（Java，`MainActivity` 注册）启动 `WeiboLoginActivity`，在普通 WebView 中加载 `https://m.weibo.cn/login`，由用户自己完成登录；页面顶部“我已登录完成”是明确动作，只有点击后插件才调用 `CookieManager.getInstance().getCookie("https://m.weibo.cn")`，通过 `readCookies()` 返回 Cookie 字符串。JS 侧 `src/device/login-native.ts` 只动态 import，拿到字符串后复用现有 `parseCookieInput` 解析、`loginWithCookies` → `src/device/session.ts` 校验与存储，不新写解析或存储。插件不存在、抛错、用户取消或 Cookie 不完整时，登录页显示可读错误并保留手动粘贴输入，不白屏。原生 Activity 在 Manifest 中 `android:exported="false"`；不新增权限，沿用已有 `INTERNET`；设备直连不监听本地端口，也不需要 server 端口。Cookie 只在内存与设备本地存储中流转，Java/JS 都不打印 Cookie 值。真机安装、真实账号登录无法在本环境验证，CI 只能证明插件编译通过与错误分支可用。
 
 **写安全**：设备写请求带 `Idempotency-Key`/本地幂等缓存，失败**不自动重试**；本地分钟桶限制写频率。`like`/`comment` 对应的 m 站端点是**未实测**的私有接口，提供 `setUnverifiedWritesEnabled(false)` 一键降级为只读并返回 `READ_ONLY`（UI 映射为不可用提示）；`setDeviceWritesEnabled(false)` 关闭全部设备写。真实微博的读/写**没有**在本环境用真实账号做端到端验证；`scripts/check-device-direct.mjs` 只证明“代码路径 + 假上游响应”可跑通，不能证明真站可用。
+
+**APK 内含 6 个 web 资源（t41 记账，防「4 个文件」的旧印象误判）**：`index.html` + `index-DOAv0mww.js`（主包 248,457 B）+ `index-D98iynny.css` + 3 个**按需加载**分块 —— `client-4dZQ0HMz.js`（设备直连取数，21,797 B）、`NativeLogin-gsLqDNus.js`（设备登录 UI，1,098 B）、`login-native-Bg4GQUwd.js`（登录辅助，1,041 B，由 NativeLogin 再动态引入）。主包对这 3 个分块只有**动态 `import()`**（静态 `from` 0 条），分块反向静态引用主包（3 条）属共享依赖、不违 `AC-G14③b`。逐字节核对请以这 6 个为准，「4 个」是 t34 时期的旧口径。
 
 ## 16. 风险与实现顺序（给 builder）
 
@@ -899,7 +958,7 @@ snap 1440,900 /tmp/shot-timeline-1440.png "$BASE/#/timeline"
 4. **Detail** → AC-DT01/04/08。
 5. **Compose** → AC-CP01/02/07。
 6. **Profile + 设置** → AC-PF01/05/06/07。
-7. 全局收尾：AC-G06（375 无横向滚动）、AC-G09（无网络调用）、AC-G11（禁用串）、AC-G12（依赖只有 2 项）。
+7. 全局收尾：AC-G06（375 无横向滚动）、AC-G09（离线抓包无外部请求）、AC-G14（产物级：无 Capacitor 实现符号 / 无绝对微博主机请求）、AC-G15（体积增量逐次记录）、AC-G11（禁用串）、AC-G12（依赖只有 2 项）。
 
 ### 16.2 已知风险
 
@@ -918,7 +977,7 @@ snap 1440,900 /tmp/shot-timeline-1440.png "$BASE/#/timeline"
 | 检查 | 方法 | 结果 |
 | --- | --- | --- |
 | 章节齐全（4 屏 + 全局 + 非目标 + 验收） | 标题匹配 12 个必备章节 | **12/12 存在** |
-| 每个交互都有验收点 | 正则抽全部 `IA-*` 与 `AC-*`，双向覆盖（§10 矩阵 ⟷ 各页定义表） | **45 个交互（TL 11 / DT 7 / CP 10 / PF 6 / 全局 11）/ 49 条验收点（+ t28 新增 8 条 = **57**，见 §13.1；新增行不带 IA，属「设计落地」类而非「交互」类，矩阵仍双向零缺口）**；无 IA 缺 AC，无幽灵 AC |
+| 每个交互都有验收点 | 正则抽全部 `IA-*` 与 `AC-*`，双向覆盖（§10 矩阵 ⟷ 各页定义表） | **45 个交互（TL 11 / DT 7 / CP 10 / PF 6 / 全局 11）/ 49 条验收点（+ t28 新增 8 条 → 57；+ t38 新增 `AC-G14`/`AC-G15` → 59，见 §13.1/§13.2；新增行不带 IA，属「设计落地」类而非「交互」类，矩阵仍双向零缺口）**；无 IA 缺 AC，无幽灵 AC |
 | 每页 ≥3 条验收点 | 计数 | **TL 12 / DT 8 / CP 9 / PF 7 / 全局 13**（全部 ≥3） |
 | 非目标与 T0 P2 一致 | N-1…N-8 逐条比对 T0 §4 P2 A–F | **A–F 全部覆盖**，另加 N-1（账号/网络/API/多语言）与 N-8（captain 锁定的 6 项） |
 | 探针与断言闭环 | §4.6 声明的 13 个探针逐个检查是否被验收引用 | **13/13 被引用** |

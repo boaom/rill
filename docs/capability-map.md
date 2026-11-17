@@ -13,7 +13,7 @@
 | C-1 | **未复用任何代码** | 交付物里无 `.smali` / `.dex` / `.jar` / `.java`；`import` 只允许相对路径 + `react` | ✅ `find src dist` 命中 0；`import` 外部来源仅 `react`(7 处) / `react-dom/client`(1 处) |
 | C-2 | **未复用任何资源** | 无二进制资源文件；CSS 里无 `url()` 引用 | ✅ `find src dist -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.gif' -o -name '*.svg' -o -name '*.woff*' -o -name '*.ttf' -o -name '*.otf' -o -name '*.mp4' -o -name '*.so' -o -name '*.dex' -o -name '*.jar'` → **0**；`grep -c 'url(' src/styles/*.css` → **0**；图标是 `icons.tsx` 里 7 个自绘 inline SVG 组件 + 空态插图 |
 | C-3 | **未复用任何文案** | 禁用串全量 grep（词边界） | ✅ `grep -rnE 'app\.unique\.one|\bUnique\b|sina' src server index.html dist | wc -l` → **0**（期望 0）；页面文案全部新写（如「这里还没有内容」「发一条，溪流就有水了」）。**允许 `微博`/`Weibo`**（产品是微博第三方客户端，禁它会让登录页文案自相矛盾）。⚠️ 旧命令 `… \| grep -v 'weibo-lite/' \| wc -l` 恒为 0 是**命令写错**（`grep -r` 每行都以 `weibo-lite/` 开头，被全滤），旧口径真实命中 **230**（微博 71 / weibo 61 / WEIBO 53 / Weibo 41 / Unique 标识 4） |
-| C-4 | **未联网、未申请任何系统能力** | 产物无网络 API；无浏览器系统能力调用 | ✅ `dist/assets/*.js` 中 `fetch(`=0 / `XMLHttpRequest`=0 / `WebSocket`=0；`src` 中 `Notification`/`serviceWorker`/`geolocation`/`getUserMedia`/`mediaDevices` = 0；运行期 630 个请求 **全部同源**（`http://127.0.0.1:4179/`），外部请求 0 |
+| C-4 | **未联网、未申请任何系统能力** | 产物级符号/URL + 运行时抓包双口径（t38 收窄，见 `spec.md §13.2`） | ✅ 产物级：主包 Capacitor **实现**符号 `CapacitorHttp`/`registerPlugin`/`registerWebPlugin`/`CapacitorCookies`/`CapacitorException`/`CAPACITOR_` 均 **0**；`Capacitor` 字符串仅 1 处且为 `window.Capacitor?.isNativePlatform?.()` 探测；**主包**内无绝对微博主机作为请求 base（`fetch(`/`XHR.open` 正则 **0**；`m.weibo.cn` 在主包出现 2 处**全是界面文案**）；**设备分块允许**出现微博主机（职责所在，t40 起**不再**要求它隐藏主机名），但主包对它**零静态引用**（`from"./client-…"` = 0 / 动态 `import()` = 1）且只在 `window.Capacitor?.isNativePlatform?.()` 为真的分支里加载。✅ 运行时：离线抓包外部 origin = **[]**、timeline 仅 5 个同源请求、其余四页 0 请求。✅ `src` 中 `Notification`/`serviceWorker`/`geolocation`/`getUserMedia`/`mediaDevices` = 0。<br>⚠️ 旧口径「`dist/assets/*.js` 中 `fetch(`=0」**已废弃**：device 分块用 `["m","weibo","cn"].join(".")` 拼主机，字面搜不到（会漏）；主包文案含 `m.weibo.cn`（会误伤） |
 
 > 顺带说明一个容易误报的点：`dist` 里能 grep 到 4 次 `clipboardData`，那是 **React DOM 自带**合成事件插件的属性名（`src` 里 0 次），不是我们的代码在调用剪贴板——判定时请用 `grep src` 的口径。
 
@@ -118,7 +118,12 @@ cd .
 # 1) 复用性/红线自检（全部期望 0）
 grep -rnE 'app\.unique\.one|\bUnique\b|sina' src server index.html dist | wc -l   # 0（词边界；允许 微博/Weibo）
 find src dist -name '*.so' -o -name '*.png' -o -name '*.dex' -o -name '*.jar' | wc -l                # 0
-for p in 'fetch(' XMLHttpRequest WebSocket; do grep -o -F "$p" dist/assets/*.js | wc -l; done         # 0 0 0
+# 产物级（t38）：实现符号 0，探测串只允许 1 次
+for p in CapacitorHttp registerPlugin registerWebPlugin CapacitorCookies CapacitorException CAPACITOR_; do grep -o -F "$p" dist/assets/index-*.js | wc -l; done   # 0 0 0 0 0 0
+grep -o 'window.Capacitor[^;]\{0,40\}' dist/assets/index-*.js                 # 只应出现 window.Capacitor?.isNativePlatform?.()
+node -e "const fs=require('fs');const m=fs.readdirSync('dist/assets').find(f=>f.startsWith('index-'));const s=fs.readFileSync('dist/assets/'+m,'utf8');console.log((s.match(/fetch\(\s*["\x27\x60]{0,2}https?:\/\/(?:m\.)?weibo\./g)||[]).length)"   # 主包 0（设备分块允许，不在此列）
+grep -oE 'from"\./client-[^"]+"' dist/assets/index-*.js | wc -l                        # 0：主包无静态引用
+grep -oE 'import\("\./client-[^"]+"\)' dist/assets/index-*.js | wc -l                # 1：只允许动态 import
 grep -rn "Notification\|serviceWorker\|geolocation\|getUserMedia\|<video\|window.open" src | wc -l    # 0
 node -e "console.log(Object.keys(require('./package.json').dependencies))"                            # ['react','react-dom']
 
